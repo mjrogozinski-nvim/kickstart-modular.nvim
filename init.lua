@@ -109,5 +109,12 @@ require 'custom.code.edit-configuration'
 require 'custom.code.sane-change'
 require 'custom.code.file-grep'
 
+require 'custom.code.multi-line-star'
+require 'custom.code.make-session'
+require 'custom.code.close-qflist'
+require 'custom.code.close-buffer'
+require 'custom.code.move-line'
+require 'custom.code.mini-surround-fix'
+
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
