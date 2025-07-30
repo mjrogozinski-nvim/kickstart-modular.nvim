@@ -106,6 +106,8 @@ require 'lazy-bootstrap'
 require 'lazy-plugins'
 
 require 'custom.code.edit-configuration'
+require 'custom.code.sane-change'
+require 'custom.code.file-grep'
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
