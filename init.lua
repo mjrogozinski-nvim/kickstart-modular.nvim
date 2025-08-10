@@ -99,22 +99,22 @@ require 'options'
 -- [[ Basic Keymaps ]]
 require 'keymaps'
 
--- [[ Install `lazy.nvim` plugin manager ]]
 require 'lazy-bootstrap'
 
--- [[ Configure and install plugins ]]
-require 'lazy-plugins'
+require 'code.edit-configuration'
+require 'code.sane-change'
+require 'code.file-grep'
 
-require 'custom.code.edit-configuration'
-require 'custom.code.sane-change'
-require 'custom.code.file-grep'
+require 'code.multi-line-star'
+require 'code.make-session'
+require 'code.close-qflist'
+require 'code.close-buffer'
+require 'code.move-line'
+require 'code.mini-surround-fix'
 
-require 'custom.code.multi-line-star'
-require 'custom.code.make-session'
-require 'custom.code.close-qflist'
-require 'custom.code.close-buffer'
-require 'custom.code.move-line'
-require 'custom.code.mini-surround-fix'
+-- NEXT: deal with plugins -> move from the main config without changes
+-- remove kickstarter vs custom -> I want only one set of plugins
+-- check if any settings from init.lua need to be ported (diff with original kickstart.nvim)
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
