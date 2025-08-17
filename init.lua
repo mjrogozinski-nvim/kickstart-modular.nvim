@@ -96,18 +96,19 @@ vim.g.have_nerd_font = true
 -- [[ Setting options ]]
 require 'options'
 
--- [[ Basic Keymaps ]]
-require 'keymaps'
-
 require 'lazy-bootstrap'
 
-require 'code.edit-configuration'
 require 'code.sane-change'
+require 'code.sane-wincmd'
+require 'code.sane-noh'
+require 'code.highlight-on-yank'
+require 'code.sane-exit-terminal'
+require 'code.edit-configuration'
 require 'code.file-grep'
 
 require 'code.multi-line-star'
 require 'code.make-session'
-require 'code.close-qflist'
+require 'code.qflist-open-close'
 require 'code.close-buffer'
 require 'code.move-line'
 require 'code.mini-surround-fix'
