@@ -26,13 +26,9 @@ require 'code.neotest-init-config'
 
 require 'code.select-dev-colorscheme'
 
--- perhaps switching could be based on env variable or something
--- but it's good enough for now
-
--- NEXT: deal with plugins -> move from the main config without changes
--- remove kickstarter vs custom -> I want only one set of plugins
--- check if any settings from init.lua need to be ported (diff with original kickstart.nvim)
--- ? NEXT to be highlighted like TODO: and NOTE:
+-- double check completion sources - NEXT
+--   - maybe blink as everything needed
+--   ? completion from other buffers
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
