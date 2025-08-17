@@ -19,6 +19,7 @@ require('lazy').setup {
   { import = 'plugins.colorschemes' },
   { import = 'plugins.cpp' },
   { import = 'plugins.haskell' },
+  { import = 'plugins.rust' },
 }
 
 -- vim: ts=2 sts=2 sw=2 et
