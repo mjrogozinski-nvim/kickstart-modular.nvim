@@ -20,6 +20,7 @@ require('lazy').setup {
   { import = 'plugins.cpp' },
   { import = 'plugins.haskell' },
   { import = 'plugins.rust' },
+  { import = 'plugins.debug' },
 }
 
 -- vim: ts=2 sts=2 sw=2 et
