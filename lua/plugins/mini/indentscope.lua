@@ -4,7 +4,9 @@ return {
   opts = {
     draw = {
       delay = 0,
-      animation = require('mini.indentscope').gen_animation.none(),
+      animation = function()
+        return 0
+      end,
     },
   },
 }
