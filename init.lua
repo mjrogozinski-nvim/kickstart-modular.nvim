@@ -22,6 +22,7 @@ require 'code.close-buffer'
 require 'code.move-line'
 require 'code.mini-surround-fix'
 require 'code.overseer-keybindings'
+require 'code.neotest-init-config'
 
 -- NEXT: deal with plugins -> move from the main config without changes
 -- remove kickstarter vs custom -> I want only one set of plugins

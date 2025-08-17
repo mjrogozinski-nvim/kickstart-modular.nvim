@@ -1,4 +1,5 @@
 {
+  "FixCursorHold.nvim": { "branch": "master", "commit": "1900f89dc17c603eec29960f57c00bd9ae696495" },
   "LuaSnip": { "branch": "master", "commit": "458560534a73f7f8d7a11a146c801db00b081df0" },
   "blink.cmp": { "branch": "main", "commit": "bae4bae0eedd1fa55f34b685862e94a222d5c6f8" },
   "conform.nvim": { "branch": "master", "commit": "973f3cb73887d510321653044791d7937c7ec0fa" },
@@ -18,6 +19,11 @@
   "mini.move": { "branch": "main", "commit": "819e90c3e113a3c826c3003ec07073f1e0677ea0" },
   "mini.statusline": { "branch": "main", "commit": "f6917f4da995d64edf3728b1302dbd5d4561c912" },
   "mini.surround": { "branch": "main", "commit": "7a8606333affe7ce637a0ba91bbafc46fc42bfa0" },
+  "neotest": { "branch": "master", "commit": "ce178308ea30f96667f1c11f022880d8c04cafd3" },
+  "neotest-busted": { "branch": "master", "commit": "9145815d5bf77070a1fdf8b43cdebe15ef2efe10" },
+  "neotest-gtest": { "branch": "main", "commit": "16989561a6356878ec4ecd6afed4f0d7a471d1db" },
+  "neotest-python": { "branch": "master", "commit": "ed9b4d794b89044cc32e5476e637936331473c6e" },
+  "neotest-vim-test": { "branch": "master", "commit": "75c4228882ae4883b11bfce9b8383e637eb44192" },
   "nvim-dap": { "branch": "master", "commit": "a479e25ed5b5d331fb46ee4b9e160ff02ac64310" },
   "nvim-dap-go": { "branch": "main", "commit": "b4421153ead5d726603b02743ea40cf26a51ed5f" },
   "nvim-dap-lldb": { "branch": "main", "commit": "9c795072554b3dbf738d0c9cb29d28d7f820b2b4" },
