@@ -7,11 +7,11 @@ require 'options'
 
 require 'lazy-bootstrap'
 
-require 'code.sane-change'
-require 'code.sane-wincmd'
-require 'code.sane-noh'
+require 'code.sane.change'
+require 'code.sane.wincmd'
+require 'code.sane.noh'
+require 'code.sane.exit-terminal'
 require 'code.highlight-on-yank'
-require 'code.sane-exit-terminal'
 require 'code.edit-configuration'
 require 'code.file-grep'
 
