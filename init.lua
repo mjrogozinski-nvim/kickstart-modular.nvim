@@ -28,7 +28,11 @@ require 'code.select-dev-colorscheme'
 
 -- double check completion sources - NEXT
 --   - maybe blink as everything needed
+--     - it does not
+--  https://github.com/saghen/blink.compat
+--  https://cmp.saghen.dev/configuration/sources#community-sources
 --   ? completion from other buffers
+--
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
