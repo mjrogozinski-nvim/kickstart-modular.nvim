@@ -21,6 +21,7 @@ require('lazy').setup {
   { import = 'plugins.haskell' },
   { import = 'plugins.rust' },
   { import = 'plugins.debug' },
+  { import = 'plugins.copilot' },
 }
 
 -- vim: ts=2 sts=2 sw=2 et
