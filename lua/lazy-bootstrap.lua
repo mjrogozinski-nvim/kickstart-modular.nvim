@@ -17,6 +17,7 @@ require('lazy').setup {
   { import = 'plugins' },
   { import = 'plugins.mini' },
   { import = 'plugins.colorschemes' },
+  { import = 'plugins.cpp' },
 }
 
 -- vim: ts=2 sts=2 sw=2 et
