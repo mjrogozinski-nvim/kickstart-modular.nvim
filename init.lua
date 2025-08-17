@@ -24,6 +24,11 @@ require 'code.mini-surround-fix'
 require 'code.overseer-keybindings'
 require 'code.neotest-init-config'
 
+require 'code.select-dev-colorscheme'
+
+-- perhaps switching could be based on env variable or something
+-- but it's good enough for now
+
 -- NEXT: deal with plugins -> move from the main config without changes
 -- remove kickstarter vs custom -> I want only one set of plugins
 -- check if any settings from init.lua need to be ported (diff with original kickstart.nvim)

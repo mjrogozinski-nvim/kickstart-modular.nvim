@@ -16,6 +16,7 @@ rtp:prepend(lazypath)
 require('lazy').setup {
   { import = 'plugins' },
   { import = 'plugins.mini' },
+  { import = 'plugins.colorschemes' },
 }
 
 -- vim: ts=2 sts=2 sw=2 et
