@@ -1,5 +1,5 @@
 {
-  "CopilotChat.nvim": { "branch": "main", "commit": "0f42bfc44202ac4daa0b0f32e30ee4040f69bf35" },
+  "CopilotChat.nvim": { "branch": "main", "commit": "ad2c759ea6db36bfefa9c7ecc7c706315564c9c0" },
   "FixCursorHold.nvim": { "branch": "master", "commit": "1900f89dc17c603eec29960f57c00bd9ae696495" },
   "LuaSnip": { "branch": "master", "commit": "458560534a73f7f8d7a11a146c801db00b081df0" },
   "SpacegrayEighties.vim": { "branch": "master", "commit": "c5d75e54ebed89b70f05ea6e14ac61c6d8d6e74a" },
