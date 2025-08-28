@@ -8,6 +8,7 @@ require 'options'
 require 'lazy-bootstrap'
 
 require 'code.sane.change'
+require 'code.sane.copy'
 require 'code.sane.wincmd'
 require 'code.sane.noh'
 require 'code.sane.exit-terminal'
