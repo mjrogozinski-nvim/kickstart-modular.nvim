@@ -21,7 +21,7 @@ return {
       desc = 'Show line diagnostics',
     },
     {
-      '<leader>cR',
+      '<leader>rn',
       '<cmd>Lspsaga rename<CR>',
       mode = '',
       desc = 'Lspsaga rename',
