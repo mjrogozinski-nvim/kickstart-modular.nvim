@@ -17,6 +17,7 @@ require 'code.copy-file-path'
 require 'code.highlight-on-yank'
 require 'code.edit-configuration'
 require 'code.file-grep'
+require 'code.completion-jumping'
 
 require 'code.multi-line-star'
 require 'code.make-session'
