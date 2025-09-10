@@ -17,6 +17,11 @@ function Find_build_dir()
   return build_dir
 end
 
+-- possible to replace with
+-- require'overseer'.register_template({
+-- Template definition (see below)
+-- })
+
 return {
   name = 'cmake build',
   desc = "Run 'make' in a 'build' folder located in the current or a parent directory.",
