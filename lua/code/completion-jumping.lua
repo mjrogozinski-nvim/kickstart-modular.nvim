@@ -1,15 +1,13 @@
-local ls = require 'luasnip'
+local cmp = require 'blink.cmp'
 
 vim.keymap.set({ 'i', 's' }, '<C-L>', function()
-  ls.jump(1)
-end, { silent = true })
-
-vim.keymap.set({ 'i', 's' }, '<C-J>', function()
-  ls.jump(-1)
-end, { silent = true })
-
-vim.keymap.set({ 'i', 's' }, '<C-E>', function()
-  if ls.choice_active() then
-    ls.change_choice(1)
+  if not cmp.is_active() then
+    return
   end
+  cmp.accept()
+  cmp.snippet_forward()
+end, { silent = true, noremap = true })
+
+vim.keymap.set({ 'i', 's' }, '<C-H>', function()
+  cmp.snippet_backward()
 end, { silent = true })
