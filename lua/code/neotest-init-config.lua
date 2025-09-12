@@ -10,7 +10,6 @@ require('neotest').setup {
     require 'neotest-vim-test' {
       ignore_file_types = { 'python', 'vim', 'lua', 'cpp', 'rust' },
     },
-    -- require 'rustaceanvim.neotest',
-    -- TODO: uncomment upon rust ftplugin integration
+    require 'rustaceanvim.neotest',
   },
 }
