@@ -1,8 +1,8 @@
 local in_current_buffer = require 'code.utils.buf-key-map'
 
-vim.keymap.set('n', '<leader>ct', function()
-  vim.cmd.RustLsp { 'testables', bang = false }
-end, in_current_buffer.with_desc 'RustTest!')
+-- vim.keymap.set('n', '<leader>ct', function()
+--   vim.cmd.RustLsp { 'testables', bang = false }
+-- end, in_current_buffer.with_desc 'RustTest!')
 
 vim.keymap.set('n', '<leader>x', function()
   vim.cmd.RustLsp 'run'
@@ -18,6 +18,9 @@ end, in_current_buffer.with_desc 'Rust debug')
 -- One option is to use
 --   lua vim.cmd.RustLsp('renderDiagnostic')
 --   but it cycles through all the diagnostics, not just errors
+--
+--
+--   run app in a floating window
 
 local overseer = require 'overseer'
 overseer.register_template {
@@ -39,10 +42,7 @@ overseer.register_template {
 
 vim.keymap.set('n', '<leader>cm', function()
   overseer.run_template { name = 'CargoBuild' }
-end, {
-  silent = true,
-  desc = 'cargo build',
-})
+end, in_current_buffer.with_desc 'cargo build')
 
 overseer.register_template {
   name = 'CargoRun',
@@ -63,7 +63,25 @@ overseer.register_template {
 
 vim.keymap.set('n', '<leader>cr', function()
   overseer.run_template { name = 'CargoRun' }
-end, {
-  silent = true,
-  desc = 'cargo run',
-})
+end, in_current_buffer.with_desc 'cargo run')
+
+overseer.register_template {
+  name = 'CargoTest',
+  builder = function()
+    return {
+      cmd = { 'cargo' },
+      args = { 'test' },
+      components = {
+        { 'on_output_quickfix', open = false },
+        'default',
+      },
+    }
+  end,
+  desc = 'Run `cargo test` in current Rust project',
+  tags = { 'rust', 'cargo' },
+  priority = 50,
+}
+
+vim.keymap.set('n', '<leader>ct', function()
+  overseer.run_template { name = 'CargoTest' }
+end, in_current_buffer.with_desc 'cargo test')
