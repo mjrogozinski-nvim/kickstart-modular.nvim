@@ -25,7 +25,6 @@ require 'code.qflist-open-close'
 require 'code.qflist-navigation'
 require 'code.close-buffer'
 require 'code.move-line'
-require 'code.mini-surround-fix'
 require 'code.overseer-keybindings'
 require 'code.neotest-init-config'
 
