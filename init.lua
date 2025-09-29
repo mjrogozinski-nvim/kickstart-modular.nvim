@@ -6,6 +6,7 @@ vim.g.have_nerd_font = true
 require 'options'
 
 require 'lazy-bootstrap'
+require 'lsp-config'
 
 require 'code.sane.change'
 require 'code.sane.copy'
