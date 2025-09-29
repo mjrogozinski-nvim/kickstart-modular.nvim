@@ -1,5 +1,5 @@
 -- https://ast-grep.github.io/guide/tools/editors.html
-require('lspconfig').ast_grep.setup {
+vim.lsp.config["ast_grep"] = {
   -- these are the default options, you only need to specify
   -- options you'd like to change from the default
   cmd = { 'ast-grep', 'lsp' },
