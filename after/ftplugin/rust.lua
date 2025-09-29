@@ -58,6 +58,7 @@ overseer.register_template {
   end,
   desc = 'Run `cargo run` in current Rust project',
   tags = { 'rust', 'cargo' },
+  direction = 'float',
   priority = 50,
 }
 
