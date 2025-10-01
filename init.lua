@@ -36,8 +36,6 @@ require 'code.move-line'
 require 'code.overseer-keybindings'
 require 'code.neotest-init-config'
 
-require 'code.ast-grep-lspconfig'
-
 require 'code.select-colorscheme'
 
 -- The line beneath this is called `modeline`. See `:help modeline`
