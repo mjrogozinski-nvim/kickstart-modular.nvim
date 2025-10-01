@@ -43,16 +43,6 @@ vim.keymap.set('n', '<leader>v', function()
       end
     end
 
-    -- fallback to any other existing window
-    if not target_win then
-      for _, w in ipairs(wins) do
-        if w ~= cur_win then
-          target_win = w
-          break
-        end
-      end
-    end
-
     if target_win then
       vim.api.nvim_set_current_win(target_win)
     else
