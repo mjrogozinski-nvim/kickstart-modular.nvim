@@ -15,9 +15,12 @@ require 'code.sane.noh'
 require 'code.sane.exit-terminal'
 require 'code.sane.autosave'
 require 'code.copy-file-path'
+
 require 'code.highlight-on-yank'
 require 'code.active-file-only-active-line'
 require 'code.q-closes-help'
+require 'code.spell-check-these-files'
+
 require 'code.edit-configuration'
 require 'code.file-grep'
 require 'code.completion-jumping'
