@@ -21,6 +21,7 @@ require 'code.active-file-only-active-line'
 require 'code.q-closes-help'
 require 'code.spell-check-these-files'
 require 'code.autoresize'
+require 'code.open-reference-in-second-split'
 
 require 'code.edit-configuration'
 require 'code.file-grep'
