@@ -24,13 +24,7 @@ local function set_cmake_open_file_keymap()
   vim.keymap.set('n', '<F2>', cmake_gf, in_current_buffer.with_desc 'Go to file under cursor')
 end
 
--- sometimes LSP attaches after ...
-set_cmake_open_file_keymap()
-
-vim.api.nvim_create_autocmd('LspAttach', {
-  buffer = vim.api.nvim_get_current_buf(),
+vim.api.nvim_create_autocmd({ 'LspAttach', 'BufEnter', 'BufWinEnter' }, {
+  pattern = { '*.cmake', 'CMakeLists.txt' },
   callback = set_cmake_open_file_keymap,
 })
-
--- ... or before
-set_cmake_open_file_keymap()
