@@ -7,6 +7,7 @@ require('neotest').setup {
       runner = 'pytest',
     },
     require 'neotest-busted',
+    require('neotest-gtest').setup {},
     require 'neotest-vim-test' {
       ignore_file_types = { 'python', 'vim', 'lua', 'cpp', 'rust' },
     },
