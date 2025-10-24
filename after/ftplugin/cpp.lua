@@ -6,9 +6,21 @@ vim.keymap.set('n', '<F4>', ':ClangdSwitchSourceHeader<CR>', in_current_buffer.w
 
 local function build_cmake_gtest_keymap()
   vim.keymap.set('n', '<leader>if', function()
-    save_buffers()
-    require('overseer').run_template { name = 'cmake build' }
-    require('neotest').run.run(vim.fn.expand '%')
+    local task = require('overseer').new_task {
+      name = 'cmake build gtest file run',
+      strategy = {
+        'orchestrator',
+        tasks = {
+          'cmake build',
+          {
+            name = 'run gtest file ' .. vim.fn.expand '%',
+            cmd = vim.cmd "lua require('neotest').run.run(vim.fn.expand '%')",
+            components = { 'default' },
+          },
+        },
+      },
+    }
+    task:start()
   end, in_current_buffer.with_desc 'build cmake run gtest file')
 end
 
