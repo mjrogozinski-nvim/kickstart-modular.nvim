@@ -30,7 +30,7 @@ return {
     return {
       cmd = 'make',
       cwd = build_dir,
-      components = { { 'on_output_parse', problem_matcher = '$gcc' }, { 'on_output_quickfix', open = true }, 'default' },
+      components = { { 'on_output_parse', problem_matcher = '$gcc' }, { 'on_output_quickfix', open = false }, 'default' },
     }
   end,
   condition = {
