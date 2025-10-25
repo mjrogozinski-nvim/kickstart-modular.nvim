@@ -16,9 +16,9 @@ local function run_build_cmake_gtest_task()
         },
         'cmake build',
         {
-          name = 'run gtest file ' .. vim.fn.expand '%',
-          cmd = vim.cmd "lua require('neotest').run.run(vim.fn.expand '%')",
-          components = { 'default_neotest' },
+          name = 'run gtest app',
+          cmd = 'build/app',
+          components = { 'default' },
         },
       },
     },
