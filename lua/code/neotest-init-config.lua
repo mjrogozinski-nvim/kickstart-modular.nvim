@@ -1,5 +1,8 @@
 ---@diagnostic disable-next-line: missing-fields
 require('neotest').setup {
+  consumers = {
+    overseer = require 'neotest.consumers.overseer',
+  },
   adapters = {
     require 'neotest-python' {
       dap = { justMyCode = false },
