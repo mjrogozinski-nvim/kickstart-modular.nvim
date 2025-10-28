@@ -18,7 +18,7 @@ local function run_build_cmake_gtest_task()
         {
           name = 'run gtest app',
           cmd = 'build/app',
-          components = { 'default' },
+          components = { { 'on_output_quickfix', open = false }, 'default' },
         },
       },
     },
@@ -27,7 +27,7 @@ local function run_build_cmake_gtest_task()
 end
 
 local function build_cmake_gtest_keymap()
-  vim.keymap.set('n', '<leader>if', run_build_cmake_gtest_task, in_current_buffer.with_desc 'build cmake run gtest file')
+  vim.keymap.set('n', '<leader>cm', run_build_cmake_gtest_task, in_current_buffer.with_desc 'build cmake run gtest file')
 end
 
 -- TODO: maybe extract it as util
