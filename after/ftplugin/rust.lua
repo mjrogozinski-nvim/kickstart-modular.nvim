@@ -41,7 +41,7 @@ overseer.register_template {
 }
 
 vim.keymap.set('n', '<leader>cm', function()
-  overseer.run_template { name = 'CargoBuild' }
+  overseer.run_task { name = 'CargoBuild' }
 end, in_current_buffer.with_desc 'cargo build')
 
 overseer.register_template {
@@ -63,7 +63,7 @@ overseer.register_template {
 }
 
 vim.keymap.set('n', '<leader>cr', function()
-  overseer.run_template { name = 'CargoRun' }
+  overseer.run_task { name = 'CargoRun' }
 end, in_current_buffer.with_desc 'cargo run')
 
 overseer.register_template {
@@ -84,5 +84,5 @@ overseer.register_template {
 }
 
 vim.keymap.set('n', '<leader>ct', function()
-  overseer.run_template { name = 'CargoTest' }
+  overseer.run_task { name = 'CargoTest' }
 end, in_current_buffer.with_desc 'cargo test')
