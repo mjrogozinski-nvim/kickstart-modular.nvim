@@ -7,5 +7,11 @@ return {
       'user.compile_cpp',
       'user.build_cmake',
     },
+    task_list = {
+      keymaps = {
+        ['<C-k>'] = '<C-w><C-k>',
+        ['<C-j>'] = '<C-w><C-j>',
+      },
+    },
   },
 }
