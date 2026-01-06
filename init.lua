@@ -16,6 +16,7 @@ require 'code.sane.exit-terminal'
 require 'code.sane.autosave'
 require 'code.sane.q-closes-help'
 require 'code.sane.dont-autocomment-new-line'
+require 'code.sane.paste-over-selection'
 
 require 'code.highlight-on-yank'
 require 'code.active-file-only-active-line'
