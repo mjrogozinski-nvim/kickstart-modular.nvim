@@ -3,3 +3,4 @@ vim.api.nvim_create_autocmd('FileType', { pattern = 'man', command = [[nnoremap 
 
 -- :h foo
 vim.api.nvim_create_autocmd('FileType', { pattern = 'help', command = [[nnoremap <buffer><silent> q :quit<CR>]] })
+vim.api.nvim_create_autocmd('FileType', { pattern = 'fugitive', command = [[nnoremap <buffer><silent> q :quit<CR>]] })
