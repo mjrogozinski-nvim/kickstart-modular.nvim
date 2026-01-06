@@ -30,7 +30,7 @@ local function run_build_cmake_gtest_task()
       tasks = {
         {
           name = 'save buffers',
-          cmd = vim.cmd "lua require 'code.utils.save-writable-buffers'()",
+          cmd = vim.cmd "lua require 'code.utils.save-all-writable-buffers'()",
           components = { 'default' },
         },
         {

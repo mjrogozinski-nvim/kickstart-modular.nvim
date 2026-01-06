@@ -1,4 +1,8 @@
+require 'code.utils.save-writable-buffer'
+
 vim.api.nvim_create_autocmd({ 'FocusLost', 'BufLeave', 'InsertLeave' }, {
   pattern = '*',
-  command = 'silent! update',
+  callback = function(ev)
+    Save_writable_buffer(ev.buf)
+  end,
 })

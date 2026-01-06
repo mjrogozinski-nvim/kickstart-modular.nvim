@@ -1,4 +1,4 @@
-local save_buffers = require 'code.utils.save-writable-buffers'
+local save_buffers = require 'code.utils.save-all-writable-buffers'
 
 return {
   'nvim-neotest/neotest',
