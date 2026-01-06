@@ -1,6 +1,6 @@
--- :Man foo
-vim.api.nvim_create_autocmd('FileType', { pattern = 'man', command = [[nnoremap <buffer><silent> q :quit<CR>]] })
-
--- :h foo
-vim.api.nvim_create_autocmd('FileType', { pattern = 'help', command = [[nnoremap <buffer><silent> q :quit<CR>]] })
-vim.api.nvim_create_autocmd('FileType', { pattern = 'fugitive', command = [[nnoremap <buffer><silent> q :quit<CR>]] })
+local q_quits_filetypes = {
+  'man', -- :Man foo
+  'help', -- :h foo
+  'fugitive', -- :Git
+}
+vim.api.nvim_create_autocmd('FileType', { pattern = q_quits_filetypes, command = [[nnoremap <buffer><silent> q :quit<CR>]] })
