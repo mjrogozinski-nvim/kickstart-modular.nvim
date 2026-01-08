@@ -3,9 +3,6 @@ return {
   opts = {
     templates = {
       'builtin',
-      'user.run_script',
-      'user.compile_cpp',
-      'user.build_cmake',
     },
     task_list = {
       keymaps = {
