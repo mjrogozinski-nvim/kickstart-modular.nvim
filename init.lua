@@ -17,6 +17,8 @@ require 'code.sane.autosave'
 require 'code.sane.q-closes-help'
 require 'code.sane.dont-autocomment-new-line'
 require 'code.sane.paste-over-selection'
+require 'code.sane.L-jumps-to-eol'
+require 'code.sane.H-jumps-to-bol'
 
 require 'code.highlight-on-yank'
 require 'code.active-file-only-active-line'
