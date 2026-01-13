@@ -20,6 +20,7 @@ require('lazy').setup {
   { import = 'plugins.cpp' },
   { import = 'plugins.haskell' },
   { import = 'plugins.rust' },
+  { import = 'plugins.python' },
   { import = 'plugins.debug' },
   { import = 'plugins.copilot' },
 }
