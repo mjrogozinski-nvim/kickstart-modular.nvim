@@ -36,7 +36,7 @@ return {
       { '<F5>', dap.continue, desc = 'Debug: Start/Continue' },
       { '<F1>', dap.step_into, desc = 'Debug: Step Into' },
       { '<F3>', dap.step_over, desc = 'Debug: Step Over' },
-      { '<F4>', dap.step_out, desc = 'Debug: Step Out' },
+      { '<F6>', dap.step_out, desc = 'Debug: Step Out' },
       { '<leader>db', dap.toggle_breakpoint, desc = 'Debug: Toggle Breakpoint' },
       {
         '<leader>dB',
