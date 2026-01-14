@@ -6,6 +6,7 @@ vim.g.have_nerd_font = true
 require 'options'
 
 require 'lazy-bootstrap'
+require 'enable-profile'
 require 'lsp-config'
 
 require 'code.sane.change'
@@ -37,12 +38,13 @@ require 'code.qflist-open-close'
 require 'code.qflist-navigation'
 require 'code.close-buffer'
 require 'code.move-line'
-require 'code.overseer-keybindings'
 require 'code.neotest-init-config'
 
 require 'code.select-colorscheme'
 
 require 'code.custom-treesitter-textobject-example'
+
+require('code.' .. Config_variant .. '.all')
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
