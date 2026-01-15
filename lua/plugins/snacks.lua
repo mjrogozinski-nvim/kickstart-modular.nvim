@@ -2,6 +2,6 @@ return {
   'folke/snacks.nvim',
   ---@type snacks.Config
   opts = {
-    bigfile = {},
+    bigfile = { line_length = 10000 },
   },
 }
