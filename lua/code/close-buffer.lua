@@ -1,1 +1,5 @@
-vim.keymap.set('n', '<leader>bc', ':bp<BAR>bd#<CR>', { silent = true, desc = 'close buffer' })
+require 'snacks'
+
+vim.keymap.set('n', '<leader>bc', function()
+  Snacks.bufdelete()
+end, { silent = true, desc = 'close buffer' })
