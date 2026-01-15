@@ -56,8 +56,10 @@ vim.opt.listchars = { tab = '» ', trail = '·', nbsp = '␣' }
 
 vim.o.shiftwidth = 4
 vim.o.tabstop = 4
+vim.o.softtabstop = 4
 vim.o.expandtab = true
-vim.o.smartindent = true
+vim.o.smartindent = false
+vim.o.cindent = false
 vim.o.autoindent = true
 
 -- Preview substitutions live, as you type!
