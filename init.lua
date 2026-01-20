@@ -38,7 +38,6 @@ require 'code.qflist-open-close'
 require 'code.qflist-navigation'
 require 'code.close-buffer'
 require 'code.move-line'
-require 'code.neotest-init-config'
 
 require 'code.select-colorscheme'
 
