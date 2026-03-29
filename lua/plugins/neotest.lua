@@ -10,11 +10,12 @@ return {
     'nvim-treesitter/nvim-treesitter',
     'nvim-neotest/neotest-python',
     'nvim-neotest/neotest-vim-test',
+    'mjrogozinski/neotest-gtest',
     'vim-test/vim-test',
   },
   config = function()
     local vim_test_adapter = require 'neotest-vim-test' {
-      ignore_file_types = { 'python', 'vim', 'lua', 'rust' },
+      ignore_file_types = { 'python', 'vim', 'lua', 'rust', 'cpp' },
     }
 
     -- to scan for new tests, run :w explicitly even if the file is saved automatically
@@ -44,6 +45,7 @@ return {
         require 'neotest-busted',
         vim_test_adapter,
         require 'rustaceanvim.neotest',
+        require('neotest-gtest').setup {},
       },
     }
   end,
