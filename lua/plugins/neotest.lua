@@ -17,6 +17,11 @@ return {
       ignore_file_types = { 'python', 'vim', 'lua', 'rust' },
     }
 
+    -- to scan for new tests, run :w explicitly even if the file is saved automatically
+    -- neotest scans for tests then
+
+    -- scanning for tests initiall is blocking - known limitation
+
     -- `neotest-vim-test` attempts to call itself through Neotest's subprocess.
     -- With our pinned Neotest version, that child runtimepath does not include
     -- this adapter, causing: `module 'neotest-vim-test' not found`.
