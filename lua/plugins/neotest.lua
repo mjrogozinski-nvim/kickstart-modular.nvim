@@ -10,7 +10,38 @@ return {
     'nvim-treesitter/nvim-treesitter',
     'nvim-neotest/neotest-python',
     'nvim-neotest/neotest-vim-test',
+    'vim-test/vim-test',
   },
+  config = function()
+    local vim_test_adapter = require 'neotest-vim-test' {
+      ignore_file_types = { 'python', 'vim', 'lua', 'rust' },
+    }
+
+    -- `neotest-vim-test` attempts to call itself through Neotest's subprocess.
+    -- With our pinned Neotest version, that child runtimepath does not include
+    -- this adapter, causing: `module 'neotest-vim-test' not found`.
+    -- Force local adapter methods to bypass subprocess until Neotest is updated.
+    vim_test_adapter.is_test_file = vim_test_adapter._is_test_file
+    vim_test_adapter.discover_positions = vim_test_adapter._discover_positions
+    vim_test_adapter.build_spec = vim_test_adapter._build_spec
+
+    ---@diagnostic disable-next-line: missing-fields
+    require('neotest').setup {
+      consumers = {
+        overseer = require 'neotest.consumers.overseer',
+      },
+      adapters = {
+        require 'neotest-python' {
+          dap = { justMyCode = false },
+          python = 'python3',
+          runner = 'pytest',
+        },
+        require 'neotest-busted',
+        vim_test_adapter,
+        require 'rustaceanvim.neotest',
+      },
+    }
+  end,
   keys = {
     {
       '<leader>is',
