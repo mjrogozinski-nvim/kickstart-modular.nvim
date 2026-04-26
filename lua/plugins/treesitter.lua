@@ -18,6 +18,7 @@ return {
         'query',
         'vim',
         'vimdoc',
+        'cmake'
       }
 
       ts.install(parsers)
