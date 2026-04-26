@@ -4,6 +4,6 @@
 
 for _, mode in ipairs { 'x', 'o' } do
   vim.keymap.set(mode, 'aF', function()
-    require('nvim-treesitter.textobjects.select').select_textobject('@custom_capture', 'custom', mode)
+    require('nvim-treesitter-textobjects.select').select_textobject('@custom_capture', 'custom')
   end)
 end
