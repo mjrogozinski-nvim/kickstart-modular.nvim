@@ -56,12 +56,12 @@ return {
       'CodeCompanionCmd',
     },
     keys = {
-      { '<leader>aa', '<cmd>CodeCompanionActions<cr>', desc = '[A]I actions', mode = { 'n', 'v' } },
-      { '<leader>ac', '<cmd>CodeCompanionChat Toggle<cr>', desc = '[A]I [c]hat' },
-      { '<leader>aC', '<cmd>CodeCompanionChat<cr>', desc = '[A]I new [C]hat' },
-      { '<leader>ai', ':CodeCompanion ', desc = '[A]I [i]nline prompt', mode = { 'n', 'v' } },
-      { '<leader>af', ':CodeCompanion /fix ', desc = '[A]I [f]ix selection', mode = 'v' },
-      { '<leader>at', ':CodeCompanion /tests ', desc = '[A]I [t]ests for selection', mode = 'v' },
+      { '<leader>ga', '<cmd>CodeCompanionActions<cr>', desc = '[A]I actions', mode = { 'n', 'v' } },
+      { '<leader>gc', '<cmd>CodeCompanionChat Toggle<cr>', desc = '[A]I [c]hat' },
+      { '<leader>gC', '<cmd>CodeCompanionChat<cr>', desc = '[A]I new [C]hat' },
+      { '<leader>gi', ':CodeCompanion ', desc = '[A]I [i]nline prompt', mode = { 'n', 'v' } },
+      { '<leader>gf', ':CodeCompanion /fix ', desc = '[A]I [f]ix selection', mode = 'v' },
+      { '<leader>gt', ':CodeCompanion /tests ', desc = '[A]I [t]ests for selection', mode = 'v' },
     },
     dependencies = {
       'nvim-lua/plenary.nvim',
