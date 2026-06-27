@@ -1,6 +1,6 @@
 -- it's from chatgpt, maybe to be refactored later, it works fine
 -- <leader>v : go to definition in a vertical split, reuse another split if present
-vim.keymap.set('n', '<leader>v', function()
+vim.keymap.set('n', '<S-F2>', function()
   local bufnr = vim.api.nvim_get_current_buf()
 
   -- pick a position_encoding from an attached client, fallback to utf-16
