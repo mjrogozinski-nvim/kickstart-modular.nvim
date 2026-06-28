@@ -21,6 +21,8 @@ require 'code.sane.visual-paste-over-selection'
 require 'code.sane.H-jumps-to-bol'
 require 'code.sane.L-jumps-to-eol'
 require 'code.sane.visual-block-leader-v'
+require 'code.sane.keepjumps-for{}'
+require 'code.sane.stackjumplist'
 
 require 'code.highlight-on-yank'
 require 'code.active-file-only-active-line'
