@@ -29,8 +29,13 @@ return {
           }
         end
       end,
+      formatters = {
+        jq = { args = { '--indent', '4', '.' } },
+      },
       formatters_by_ft = {
         lua = { 'stylua' },
+        jsonc = { 'jq' },
+        json = { 'jq' },
         -- Conform can also run multiple formatters sequentially
         -- python = { "isort", "black" },
         --
