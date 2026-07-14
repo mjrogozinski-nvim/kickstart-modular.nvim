@@ -19,5 +19,5 @@ return {
       desc = '[e]xplorer in cwd',
     },
   },
-  opts = {},
+  opts = { mappings = { go_in_plus = 'l', go_in = 'L' } },
 }
