@@ -14,7 +14,7 @@ return {
           ['@function.outer'] = 'V',
           ['@class.outer'] = '<c-v>',
         },
-        include_surrounding_whitespace = true,
+        include_surrounding_whitespace = false,
       },
       move = {
         set_jumps = true,
@@ -40,6 +40,12 @@ return {
     vim.keymap.set({ 'x', 'o' }, 'ia', function()
       select.select_textobject('@parameter.inner', 'textobjects')
     end, { desc = 'Select inner parameter' })
+    vim.keymap.set({ 'x', 'o' }, 'aN', function()
+      select.select_textobject('@namespace.outer', 'textobjects')
+    end, { desc = 'Select outer namespace' })
+    vim.keymap.set({ 'x', 'o' }, 'iN', function()
+      select.select_textobject('@namespace.inner', 'textobjects')
+    end, { desc = 'Select inner namespace' })
     vim.keymap.set({ 'x', 'o' }, 'as', function()
       select.select_textobject('@local.scope', 'locals')
     end, { desc = 'Select language scope' })
