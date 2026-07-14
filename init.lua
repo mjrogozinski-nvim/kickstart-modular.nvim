@@ -41,6 +41,7 @@ require 'code.qflist-open-close'
 require 'code.qflist-navigation'
 require 'code.close-buffer'
 require 'code.move-line'
+require 'code.f2-gf'
 
 require 'code.select-colorscheme'
 
