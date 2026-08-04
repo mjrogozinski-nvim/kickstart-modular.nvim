@@ -1,49 +1,15 @@
 local M = {}
 
 local api = vim.api
-local ts = vim.treesitter
 local uv = vim.uv
-local namespace = api.nvim_create_namespace 'gtest-actions'
-local cache = {}
-local action_keymaps = {}
+local actions = require 'code.treesitter-actions'
 
-local function capture_map(query, match)
-  local captures = {}
-
-  for id, nodes in pairs(match) do
-    if type(nodes) ~= 'table' then
-      nodes = { nodes }
-    end
-
-    local name = query.captures[id]
-    captures[name] = captures[name] or {}
-    vim.list_extend(captures[name], nodes)
-  end
-
-  return captures
-end
-
-local function first_capture(captures, name)
-  return captures[name] and captures[name][1] or nil
-end
-
-local function node_text(node, bufnr)
-  return node and ts.get_node_text(node, bufnr) or nil
-end
+local run_item
+local debug_item
 
 local function unqualified_base_name(base)
   base = base:gsub('%s+', '')
   return base:match '([%a_][%w_]*)<' or base:match '([%a_][%w_]*)$'
-end
-
-local function node_range(node)
-  local start_row, start_col, end_row, end_col = node:range()
-  return {
-    start_row = start_row,
-    start_col = start_col,
-    end_row = end_row,
-    end_col = end_col,
-  }
 end
 
 local function make_filter(macro, suite, name)
@@ -54,53 +20,72 @@ local function make_filter(macro, suite, name)
   return filter
 end
 
-local function parse_items(bufnr)
-  local ok_parser, parser = pcall(ts.get_parser, bufnr, 'cpp')
-  local query = ts.query.get('cpp', 'gtest-names')
-  if not ok_parser or not parser or not query then
-    return {}
-  end
+local function contextual_item(range, data)
+  return {
+    range = range,
+    data = data,
+    hint = {
+      icon = { '▶', 'DiagnosticOk' },
+      text = { 'run this test', 'Comment' },
+    },
+    actions = {
+      {
+        lhs = '<leader>cm',
+        label = 'run',
+        desc = 'build and run GoogleTest on this line',
+        callback = function(item, bufnr)
+          run_item(item, bufnr)
+        end,
+      },
+      {
+        lhs = '<leader>dm',
+        label = 'debug',
+        desc = 'build and debug GoogleTest on this line',
+        callback = function(item, bufnr)
+          debug_item(item, bufnr)
+        end,
+      },
+    },
+  }
+end
 
-  local tree = parser:parse()[1]
-  if not tree then
-    return {}
-  end
-
+local function detect(context)
   local tests = {}
   local classes = {}
-  local root = tree:root()
 
-  for _, match in query:iter_matches(root, bufnr) do
-    local captures = capture_map(query, match)
-    local test_node = first_capture(captures, 'test.definition')
-    local class_node = first_capture(captures, 'fixture.definition')
+  for _, match in ipairs(context.matches) do
+    local captures = match.captures
+    local test_node = context.first_capture(captures, 'test.definition')
+    local class_node = context.first_capture(captures, 'fixture.definition')
 
     if test_node then
-      local macro = node_text(first_capture(captures, 'test.macro'), bufnr)
-      local suite = node_text(first_capture(captures, 'test.suite'), bufnr)
-      local name = node_text(first_capture(captures, 'test.name'), bufnr)
+      local macro = context.node_text(context.first_capture(captures, 'test.macro'))
+      local suite = context.node_text(context.first_capture(captures, 'test.suite'))
+      local name = context.node_text(context.first_capture(captures, 'test.name'))
 
       if macro and suite and name then
-        local item = node_range(test_node)
-        item.label = suite .. '.' .. name
-        item.filter = make_filter(macro, suite, name)
-        item.kind = 'test'
-        tests[#tests + 1] = item
+        tests[#tests + 1] = contextual_item(context.node_range(test_node), {
+          kind = 'test',
+          label = suite .. '.' .. name,
+          filter = make_filter(macro, suite, name),
+        })
       end
     elseif class_node then
-      local range = node_range(class_node)
+      local range = context.node_range(class_node)
       local key = table.concat({ range.start_row, range.start_col, range.end_row, range.end_col }, ':')
       local class = classes[key]
 
       if not class then
-        class = range
-        class.name = node_text(first_capture(captures, 'fixture.name'), bufnr)
-        class.bases = {}
+        class = {
+          range = range,
+          name = context.node_text(context.first_capture(captures, 'fixture.name')),
+          bases = {},
+        }
         classes[key] = class
       end
 
       for _, base_node in ipairs(captures['fixture.base'] or {}) do
-        local base = unqualified_base_name(node_text(base_node, bufnr))
+        local base = unqualified_base_name(context.node_text(base_node))
         if base then
           class.bases[base] = true
         end
@@ -133,115 +118,30 @@ local function parse_items(bufnr)
 
   for _, class in pairs(classes) do
     if fixture_names[class.name] then
-      class.label = class.name
-      class.filter = class.name .. '.*:*/' .. class.name .. '.*/*'
-      class.kind = 'fixture'
-      class.bases = nil
-      tests[#tests + 1] = class
+      tests[#tests + 1] = contextual_item(class.range, {
+        kind = 'fixture',
+        label = class.name,
+        filter = class.name .. '.*:*/' .. class.name .. '.*/*',
+      })
     end
   end
 
+  table.sort(tests, function(left, right)
+    if left.range.start_row == right.range.start_row then
+      return left.range.start_col < right.range.start_col
+    end
+    return left.range.start_row < right.range.start_row
+  end)
   return tests
 end
 
-local function items(bufnr)
-  local changedtick = api.nvim_buf_get_changedtick(bufnr)
-  if not cache[bufnr] or cache[bufnr].changedtick ~= changedtick then
-    cache[bufnr] = {
-      changedtick = changedtick,
-      items = parse_items(bufnr),
-    }
-  end
-  return cache[bufnr].items
-end
-
-local function contains(item, row, col)
-  local after_start = row > item.start_row or (row == item.start_row and col >= item.start_col)
-  local before_end = row < item.end_row or (row == item.end_row and col < item.end_col)
-  return after_start and before_end
-end
-
-function M.test_at_position(bufnr, row, col)
-  local selected
-  local selected_span
-
-  for _, item in ipairs(items(bufnr)) do
-    if contains(item, row, col) then
-      local span = (item.end_row - item.start_row) * 1000000 + item.end_col - item.start_col
-      if not selected_span or span < selected_span then
-        selected = item
-        selected_span = span
-      end
-    end
-  end
-
-  return selected
-end
-
-local function test_on_hint_line(bufnr)
-  local row = api.nvim_win_get_cursor(0)[1] - 1
-  for _, item in ipairs(items(bufnr)) do
-    if item.start_row == row then
-      return item
-    end
-  end
-end
-
-local function enable_action_keymaps(bufnr)
-  if action_keymaps[bufnr] then
-    return
-  end
-
-  vim.keymap.set('n', '<leader>cm', M.run_under_cursor, {
-    buffer = bufnr,
-    silent = true,
-    desc = 'build and run GoogleTest on this line',
-  })
-  vim.keymap.set('n', '<leader>dm', M.debug_under_cursor, {
-    buffer = bufnr,
-    silent = true,
-    desc = 'build and debug GoogleTest on this line',
-  })
-  action_keymaps[bufnr] = true
-end
-
-local function disable_action_keymaps(bufnr)
-  if not action_keymaps[bufnr] then
-    return
-  end
-
-  pcall(vim.keymap.del, 'n', '<leader>cm', { buffer = bufnr })
-  pcall(vim.keymap.del, 'n', '<leader>dm', { buffer = bufnr })
-  action_keymaps[bufnr] = nil
-end
-
-function M.update_hint(bufnr)
-  if not api.nvim_buf_is_valid(bufnr) or api.nvim_get_current_buf() ~= bufnr then
-    return
-  end
-
-  api.nvim_buf_clear_namespace(bufnr, namespace, 0, -1)
-  local item = test_on_hint_line(bufnr)
-  if not item then
-    disable_action_keymaps(bufnr)
-    return
-  end
-
-  enable_action_keymaps(bufnr)
-  api.nvim_buf_set_extmark(bufnr, namespace, item.start_row, -1, {
-    virt_text = {
-      { '  ▶ ', 'DiagnosticOk' },
-      { 'run this test  ', 'Comment' },
-      { '<leader>cm', 'DiagnosticInfo' },
-      { ' - run  ', 'Comment' },
-      { '·  ', 'NonText' },
-      { '<leader>dm', 'DiagnosticInfo' },
-      { ' - debug', 'Comment' },
-    },
-    virt_text_pos = 'eol',
-    hl_mode = 'combine',
-  })
-end
+M.provider = {
+  id = 'gtest',
+  language = 'cpp',
+  query = 'gtest-names',
+  priority = 100,
+  detect = detect,
+}
 
 local function project_paths(bufnr)
   local filename = api.nvim_buf_get_name(bufnr)
@@ -253,6 +153,40 @@ local function project_paths(bufnr)
 
   local root = vim.fs.dirname(cmake_file)
   return root, root .. '/build'
+end
+
+local function output_components()
+  return {
+    { 'on_output_parse', problem_matcher = '$gcc' },
+    { 'on_output_quickfix', open = false },
+    'default',
+  }
+end
+
+local function configure_definition(root, build_dir)
+  return {
+    name = 'configure',
+    cmd = {
+      'cmake',
+      '-S',
+      root,
+      '-B',
+      build_dir,
+      '-DCMAKE_BUILD_TYPE=Debug',
+      '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON',
+    },
+    cwd = root,
+    components = output_components(),
+  }
+end
+
+local function build_definition(root, build_dir)
+  return {
+    name = 'build',
+    cmd = { 'cmake', '--build', build_dir, '--parallel' },
+    cwd = root,
+    components = output_components(),
+  }
 end
 
 local function task_then_success(definition, on_success)
@@ -284,64 +218,27 @@ local function build_then(bufnr, on_success)
   end
 
   local function build()
-    task_then_success({
-      name = 'build GoogleTest executable',
-      cmd = { 'cmake', '--build', build_dir, '--parallel' },
-      cwd = root,
-      components = {
-        { 'on_output_parse', problem_matcher = '$gcc' },
-        { 'on_output_quickfix', open = false },
-        'default',
-      },
-    }, function()
+    task_then_success(build_definition(root, build_dir), function()
       on_success(root, build_dir)
     end)
   end
 
   if uv.fs_stat(build_dir .. '/CMakeCache.txt') then
     build()
-    return
+  else
+    task_then_success(configure_definition(root, build_dir), function()
+      ensure_compile_commands_link(root)
+      build()
+    end)
   end
-
-  task_then_success({
-    name = 'configure GoogleTest project',
-    cmd = {
-      'cmake',
-      '-S',
-      root,
-      '-B',
-      build_dir,
-      '-DCMAKE_BUILD_TYPE=Debug',
-      '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON',
-    },
-    cwd = root,
-    components = {
-      { 'on_output_parse', problem_matcher = '$gcc' },
-      { 'on_output_quickfix', open = false },
-      'default',
-    },
-  }, function()
-    ensure_compile_commands_link(root)
-    build()
-  end)
 end
 
-local function selected_test_or_notify(bufnr)
-  local item = test_on_hint_line(bufnr)
-  if not item then
-    vim.notify('Cursor is not on a GoogleTest action hint', vim.log.levels.WARN)
-  end
-  return item
+local function data(item)
+  return item.data
 end
 
-function M.run_under_cursor()
-  local bufnr = api.nvim_get_current_buf()
-  local item = selected_test_or_notify(bufnr)
-  if not item then
-    return
-  end
-
-  require('code.utils.save-all-writable-buffers')()
+run_item = function(item, bufnr)
+  require 'code.utils.save-all-writable-buffers'()
   local root, build_dir = project_paths(bufnr)
   if not root then
     vim.notify('No CMakeLists.txt found for this test', vim.log.levels.ERROR)
@@ -350,41 +247,13 @@ function M.run_under_cursor()
 
   ensure_compile_commands_link(root)
   local tasks = {}
-
   if not uv.fs_stat(build_dir .. '/CMakeCache.txt') then
-    tasks[#tasks + 1] = {
-      name = 'configure',
-      cmd = {
-        'cmake',
-        '-S',
-        root,
-        '-B',
-        build_dir,
-        '-DCMAKE_BUILD_TYPE=Debug',
-        '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON',
-      },
-      cwd = root,
-      components = {
-        { 'on_output_parse', problem_matcher = '$gcc' },
-        { 'on_output_quickfix', open = false },
-        'default',
-      },
-    }
+    tasks[#tasks + 1] = configure_definition(root, build_dir)
   end
-
+  tasks[#tasks + 1] = build_definition(root, build_dir)
   tasks[#tasks + 1] = {
-    name = 'build',
-    cmd = { 'cmake', '--build', build_dir, '--parallel' },
-    cwd = root,
-    components = {
-      { 'on_output_parse', problem_matcher = '$gcc' },
-      { 'on_output_quickfix', open = false },
-      'default',
-    },
-  }
-  tasks[#tasks + 1] = {
-    name = 'execute ' .. item.label,
-    cmd = { build_dir .. '/app', '--gtest_filter=' .. item.filter },
+    name = 'execute ' .. data(item).label,
+    cmd = { build_dir .. '/app', '--gtest_filter=' .. data(item).filter },
     cwd = root,
     components = {
       { 'open_output', direction = 'dock', focus = false, on_start = 'always' },
@@ -392,25 +261,21 @@ function M.run_under_cursor()
     },
   }
 
-  require('overseer').new_task {
-    name = 'run ' .. item.label,
-    cwd = root,
-    strategy = {
-      'orchestrator',
-      tasks = tasks,
-    },
-    components = { 'default' },
-  }:start()
+  require('overseer')
+    .new_task({
+      name = 'run ' .. data(item).label,
+      cwd = root,
+      strategy = {
+        'orchestrator',
+        tasks = tasks,
+      },
+      components = { 'default' },
+    })
+    :start()
 end
 
-function M.debug_under_cursor()
-  local bufnr = api.nvim_get_current_buf()
-  local item = selected_test_or_notify(bufnr)
-  if not item then
-    return
-  end
-
-  require('code.utils.save-all-writable-buffers')()
+debug_item = function(item, bufnr)
+  require 'code.utils.save-all-writable-buffers'()
   build_then(bufnr, function(root, build_dir)
     local executable = build_dir .. '/app'
     if not uv.fs_stat(executable) then
@@ -425,46 +290,59 @@ function M.debug_under_cursor()
     end
 
     dap.run {
-      name = 'debug ' .. item.label,
+      name = 'debug ' .. data(item).label,
       type = 'codelldb',
       request = 'launch',
       program = executable,
       cwd = root,
-      args = { '--gtest_filter=' .. item.filter },
+      args = { '--gtest_filter=' .. data(item).filter },
       stopOnEntry = false,
     }
   end)
 end
 
-function M.setup_buffer(bufnr)
-  bufnr = bufnr or api.nvim_get_current_buf()
-  if vim.b[bufnr].gtest_actions_setup then
-    return
+local function active_gtest_item(bufnr)
+  for _, item in ipairs(actions.active_items(bufnr)) do
+    if item.provider_id == M.provider.id then
+      return item
+    end
   end
-  vim.b[bufnr].gtest_actions_setup = true
+end
 
-  pcall(ts.start, bufnr, 'cpp')
+local function selected_or_notify()
+  local bufnr = api.nvim_get_current_buf()
+  local item = active_gtest_item(bufnr)
+  if not item then
+    vim.notify('Cursor is not on a GoogleTest action hint', vim.log.levels.WARN)
+  end
+  return item, bufnr
+end
 
-  local group = api.nvim_create_augroup('GtestActions' .. bufnr, { clear = true })
-  api.nvim_create_autocmd({ 'BufEnter', 'CursorMoved', 'CursorMovedI', 'TextChanged', 'TextChangedI' }, {
-    group = group,
-    buffer = bufnr,
-    callback = function()
-      M.update_hint(bufnr)
-    end,
-  })
-  api.nvim_create_autocmd('BufWipeout', {
-    group = group,
-    buffer = bufnr,
-    callback = function()
-      cache[bufnr] = nil
-      action_keymaps[bufnr] = nil
-    end,
-  })
+function M.run_under_cursor()
+  local item, bufnr = selected_or_notify()
+  if item then
+    run_item(item, bufnr)
+  end
+end
 
-  vim.schedule(function()
-    M.update_hint(bufnr)
-  end)
+function M.debug_under_cursor()
+  local item, bufnr = selected_or_notify()
+  if item then
+    debug_item(item, bufnr)
+  end
+end
+
+function M.test_at_position(bufnr, row, col)
+  local item = actions.item_at_position(bufnr, M.provider.id, row, col)
+  return item and item.data or nil
+end
+
+function M.update_hint(bufnr)
+  actions.refresh(bufnr)
+end
+
+function M.setup_buffer(bufnr)
+  actions.attach(bufnr or api.nvim_get_current_buf(), M.provider)
 end
 
 return M

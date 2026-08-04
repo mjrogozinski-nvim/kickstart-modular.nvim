@@ -37,6 +37,27 @@ local function find_hint(bufnr)
   end
 end
 
+local function hint_text(hint)
+  local chunks = {}
+  for _, chunk in ipairs(hint[4].virt_text or {}) do
+    chunks[#chunks + 1] = chunk[1]
+  end
+  return table.concat(chunks)
+end
+
+local function occurrences(text, pattern)
+  local count = 0
+  local offset = 1
+  while true do
+    local start = text:find(pattern, offset, true)
+    if not start then
+      return count
+    end
+    count = count + 1
+    offset = start + #pattern
+  end
+end
+
 local function assert_item(actions, bufnr, line, expected)
   local item = assert(actions.test_at_position(bufnr, line - 1, 0), 'no item found on line ' .. line)
   assert(item.kind == expected.kind, vim.inspect { expected = expected, actual = item })
@@ -94,12 +115,15 @@ local function main()
   vim.env.GTEST_ACTIONS_TEST_LOG = execution_log
   vim.g.mapleader = ' '
 
-  vim.keymap.set('n', '<leader>cm', function() end, { desc = 'default run sentinel' })
-  vim.keymap.set('n', '<leader>dm', function() end, { desc = 'default debug sentinel' })
+  local default_run = function() end
+  local default_debug = function() end
+  vim.keymap.set('n', '<leader>cm', default_run, { desc = 'default run sentinel' })
+  vim.keymap.set('n', '<leader>dm', default_debug, { desc = 'default debug sentinel' })
 
   vim.cmd.edit(vim.fn.fnameescape(source_path))
   local bufnr = api.nvim_get_current_buf()
   local actions = require 'code.gtest-actions'
+  local framework = require 'code.treesitter-actions'
   local plain_line = find_line(source, 'TEST(PlainSuite')
   local base_fixture_line = find_line(source, 'class BaseFixture')
   local derived_fixture_line = find_line(source, 'class DerivedFixture')
@@ -107,9 +131,12 @@ local function main()
   local parameter_fixture_line = find_line(source, 'class ParamFixture')
   local parameter_test_line = find_line(source, 'TEST_P(ParamFixture')
 
-  assert(vim.wait(5000, function()
-    return actions.test_at_position(bufnr, plain_line - 1, 0) ~= nil
-  end, 20), 'Tree-sitter did not discover the generated tests')
+  assert(
+    vim.wait(5000, function()
+      return actions.test_at_position(bufnr, plain_line - 1, 0) ~= nil
+    end, 20),
+    'Tree-sitter did not discover the generated tests'
+  )
 
   assert_item(actions, bufnr, plain_line, {
     kind = 'test',
@@ -142,21 +169,161 @@ local function main()
     filter = 'ParamFixture.IsPositive:*/ParamFixture.IsPositive/*',
   })
 
+  local detect_calls = {}
+  local selected_action
+  local function provider(specification)
+    local provider_definition = {
+      id = specification.id,
+      language = 'cpp',
+      query = 'gtest-names',
+      priority = specification.priority,
+    }
+
+    provider_definition.detect = function(context)
+      detect_calls[specification.id] = (detect_calls[specification.id] or 0) + 1
+      for _, match in ipairs(context.matches) do
+        local definition = context.first_capture(match.captures, 'test.definition')
+        local suite = context.node_text(context.first_capture(match.captures, 'test.suite'))
+        if definition and suite == 'PlainSuite' then
+          return {
+            {
+              range = context.node_range(definition),
+              hint = {
+                icon = { specification.icon or '◆', 'DiagnosticHint' },
+                text = { specification.title, 'Comment' },
+              },
+              actions = {
+                {
+                  lhs = specification.lhs,
+                  label = specification.label,
+                  desc = specification.description,
+                  callback = function()
+                    selected_action = specification.id
+                  end,
+                },
+              },
+            },
+          }
+        end
+      end
+      return {}
+    end
+    return provider_definition
+  end
+
+  local merge_provider = provider {
+    id = 'inspect-test',
+    priority = 20,
+    title = 'inspect this test',
+    lhs = '<leader>xm',
+    label = 'inspect',
+    description = 'inspect contextual test',
+  }
+  local low_priority = provider {
+    id = 'priority-low',
+    priority = 10,
+    title = 'low priority',
+    lhs = '<leader>zm',
+    label = 'low',
+    description = 'low-priority contextual action',
+  }
+  local high_priority = provider {
+    id = 'priority-high',
+    priority = 30,
+    title = 'high priority',
+    lhs = '<leader>zm',
+    label = 'high',
+    description = 'high-priority contextual action',
+  }
+  local tied_priority = provider {
+    id = 'priority-tied',
+    priority = 30,
+    title = 'tied priority',
+    lhs = '<leader>zm',
+    label = 'tied',
+    description = 'tied-priority contextual action',
+  }
+
+  local buffer_inspect = function() end
+  local buffer_priority = function() end
+  vim.keymap.set('n', '<leader>xm', buffer_inspect, { buffer = bufnr, desc = 'buffer inspect sentinel' })
+  vim.keymap.set('n', '<leader>zm', buffer_priority, { buffer = bufnr, desc = 'buffer priority sentinel' })
+
+  local notifications = {}
+  local original_notify = vim.notify
+  vim.notify = function(message, level)
+    notifications[#notifications + 1] = { message = message, level = level }
+  end
+  framework.attach(bufnr, { merge_provider, low_priority, high_priority, tied_priority })
+  framework.attach(bufnr, merge_provider)
+
   api.nvim_win_set_cursor(0, { plain_line, 0 })
   actions.update_hint(bufnr)
 
   local hint = assert(find_hint(bufnr), 'action hint was not rendered')
+  local rendered_hint = hint_text(hint)
   assert(hint[2] == plain_line - 1, vim.inspect(hint))
   assert(hint[4].virt_text[3][1] == '<leader>cm', vim.inspect(hint))
   assert(hint[4].virt_text[6][1] == '<leader>dm', vim.inspect(hint))
+  assert(rendered_hint:find('inspect this test', 1, true), rendered_hint)
+  assert(rendered_hint:find('high priority', 1, true), rendered_hint)
+  assert(not rendered_hint:find('low priority', 1, true), rendered_hint)
+  assert(not rendered_hint:find('tied priority', 1, true), rendered_hint)
+  assert(occurrences(rendered_hint, 'inspect this test') == 1, rendered_hint)
   assert(mapping('<leader>cm').desc == 'build and run GoogleTest on this line')
   assert(mapping('<leader>dm').desc == 'build and debug GoogleTest on this line')
+  assert(mapping('<leader>xm').desc == 'inspect contextual test')
+  assert(mapping('<leader>zm').desc == 'high-priority contextual action')
+  assert(
+    vim.wait(1000, function()
+      return #notifications > 0
+    end, 10),
+    'equal-priority collision warning was not emitted'
+  )
+  assert(notifications[1].message:find 'keeping priority%-high', vim.inspect(notifications))
+
+  mapping('<leader>xm').callback()
+  assert(selected_action == 'inspect-test', selected_action)
+  mapping('<leader>zm').callback()
+  assert(selected_action == 'priority-high', selected_action)
+
+  local detected_before_refresh = detect_calls['inspect-test']
+  actions.update_hint(bufnr)
+  actions.update_hint(bufnr)
+  assert(detect_calls['inspect-test'] == detected_before_refresh, vim.inspect(detect_calls))
+  assert(#notifications == 1, vim.inspect(notifications))
+  vim.notify = original_notify
+
+  api.nvim_buf_set_lines(bufnr, -1, -1, false, { '// changedtick cache invalidation' })
+  actions.update_hint(bufnr)
+  assert(detect_calls['inspect-test'] > detected_before_refresh, vim.inspect(detect_calls))
+  assert(#framework.get_items(bufnr, 'inspect-test') == 1)
+  assert(framework.item_at_position(bufnr, 'inspect-test', plain_line - 1, 0) ~= nil)
 
   api.nvim_win_set_cursor(0, { plain_line + 1, 0 })
   actions.update_hint(bufnr)
   assert(find_hint(bufnr) == nil, 'hint remained visible outside the declaration line')
   assert(mapping('<leader>cm').desc == 'default run sentinel')
   assert(mapping('<leader>dm').desc == 'default debug sentinel')
+  assert(mapping('<leader>xm').desc == 'buffer inspect sentinel')
+  assert(mapping('<leader>zm').desc == 'buffer priority sentinel')
+  assert(mapping('<leader>cm').callback == default_run)
+  assert(mapping('<leader>dm').callback == default_debug)
+  assert(mapping('<leader>xm').callback == buffer_inspect)
+  assert(mapping('<leader>zm').callback == buffer_priority)
+
+  api.nvim_win_set_cursor(0, { plain_line, 0 })
+  actions.update_hint(bufnr)
+  local other_buffer = api.nvim_create_buf(false, true)
+  api.nvim_set_current_buf(other_buffer)
+  assert(find_hint(bufnr) == nil, 'hint remained visible after leaving the buffer')
+  api.nvim_buf_call(bufnr, function()
+    assert(mapping('<leader>xm').desc == 'buffer inspect sentinel')
+    assert(mapping('<leader>zm').desc == 'buffer priority sentinel')
+    assert(mapping('<leader>xm').callback == buffer_inspect)
+    assert(mapping('<leader>zm').callback == buffer_priority)
+  end)
+  api.nvim_set_current_buf(bufnr)
 
   api.nvim_win_set_cursor(0, { plain_line, 0 })
   actions.update_hint(bufnr)
@@ -167,20 +334,23 @@ local function main()
     existing_tasks[task.id] = true
   end
 
-  local run_mapping = mapping('<leader>cm')
+  local run_mapping = mapping '<leader>cm'
   assert(type(run_mapping.callback) == 'function')
   run_mapping.callback()
 
   local parent
-  assert(vim.wait(15000, function()
-    for _, task in ipairs(overseer.list_tasks {}) do
-      if not existing_tasks[task.id] and task.name == 'run PlainSuite.Works' then
-        parent = task
-        return task:is_complete()
+  assert(
+    vim.wait(15000, function()
+      for _, task in ipairs(overseer.list_tasks {}) do
+        if not existing_tasks[task.id] and task.name == 'run PlainSuite.Works' then
+          parent = task
+          return task:is_complete()
+        end
       end
-    end
-    return false
-  end, 20), 'orchestrated run did not complete')
+      return false
+    end, 20),
+    'orchestrated run did not complete'
+  )
 
   assert(parent.status == 'SUCCESS', parent.status)
   local children = {}
@@ -205,12 +375,15 @@ local function main()
     debug_configuration = configuration
   end
 
-  local debug_mapping = mapping('<leader>dm')
+  local debug_mapping = mapping '<leader>dm'
   assert(type(debug_mapping.callback) == 'function')
   debug_mapping.callback()
-  assert(vim.wait(15000, function()
-    return debug_configuration ~= nil
-  end, 20), 'debug action was not dispatched')
+  assert(
+    vim.wait(15000, function()
+      return debug_configuration ~= nil
+    end, 20),
+    'debug action was not dispatched'
+  )
 
   assert(
     debug_configuration.program == uv.fs_realpath(temporary_project .. '/build/app'),
