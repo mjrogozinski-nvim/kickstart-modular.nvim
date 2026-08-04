@@ -14,4 +14,4 @@ end
 vim.opt.runtimepath:append(config .. '/after')
 
 vim.cmd 'filetype plugin on'
-require('overseer').setup {}
+require('overseer').setup(require('plugins.overseer').opts)

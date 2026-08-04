@@ -46,6 +46,39 @@ local function build_and_run_all_tests()
     :start()
 end
 
+local function newest_task(tasks, predicate)
+  local newest
+  for _, task in ipairs(tasks) do
+    if predicate(task) and (not newest or task.id > newest.id) then
+      newest = task
+    end
+  end
+  return newest
+end
+
+local function summary_task(overseer)
+  local status = require('overseer.constants').STATUS
+  local tasks = overseer.list_tasks { include_ephemeral = true }
+  local parent = newest_task(tasks, function(task)
+    return task.parent_id == nil
+  end)
+  if not parent then
+    return nil
+  end
+
+  local failed = newest_task(tasks, function(task)
+    return task.parent_id == parent.id and task.status == status.FAILURE
+  end)
+  if failed then
+    return failed
+  end
+
+  local last_started = newest_task(tasks, function(task)
+    return task.parent_id == parent.id and task.status ~= status.PENDING
+  end)
+  return last_started or parent
+end
+
 -- another option is :OverseerRun cmake\ build
 vim.keymap.set('n', '<leader>cb', function()
   require('overseer').run_task { name = 'cmake build' }
@@ -60,7 +93,9 @@ vim.keymap.set('n', '<leader>cm', build_and_run_all_tests, {
 })
 
 vim.keymap.set('n', '<leader>co', function()
-  require('overseer').toggle()
+  local overseer = require 'overseer'
+  local task = summary_task(overseer)
+  overseer.toggle { focus_task_id = task and task.id or nil }
 end, {
   silent = true,
   desc = 'ToggleOverseer (Open Overseer)',
