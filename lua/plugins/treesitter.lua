@@ -9,6 +9,7 @@ return {
       local parsers = {
         'bash',
         'c',
+        'cpp',
         'diff',
         'html',
         'lua',
@@ -18,7 +19,7 @@ return {
         'query',
         'vim',
         'vimdoc',
-        'cmake'
+        'cmake',
       }
 
       ts.install(parsers)

@@ -77,7 +77,14 @@ return {
 
       sources = {
         default = { 'lsp', 'path', 'snippets', 'lazydev', 'buffer' },
+        per_filetype = {
+          -- Nix completions should come from the evaluated package set, not
+          -- words that merely happen to occur elsewhere in the buffer.
+          nix = { 'lsp', 'path' },
+        },
         providers = {
+          -- Evaluating a flake can take longer on the first completion request.
+          lsp = { timeout_ms = 10000 },
           lazydev = { module = 'lazydev.integrations.blink', score_offset = 100 },
         },
       },
