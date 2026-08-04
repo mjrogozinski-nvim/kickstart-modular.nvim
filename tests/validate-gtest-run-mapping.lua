@@ -175,7 +175,7 @@ local function main()
   vim.keymap.set('n', '<leader>cm', default_run, { desc = 'default run sentinel' })
   vim.keymap.set('n', '<leader>dm', default_debug, { desc = 'default debug sentinel' })
 
-  local actions = require 'code.gtest-actions'
+  local actions = require 'code.home.gtest-actions'
   local framework = require 'code.treesitter-actions'
   local plain_line = find_line(source, 'TEST(PlainSuite')
   local base_fixture_line = find_line(source, 'class BaseFixture')
