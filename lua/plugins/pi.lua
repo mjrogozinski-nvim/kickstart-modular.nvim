@@ -1,5 +1,5 @@
 return {
-  'zgs225/pi2.nvim',
+  'mjrogozinski/pi2.nvim',
   dependencies = { 'MeanderingProgrammer/render-markdown.nvim' },
   opts = {
     cli = { args = { '--provider', 'ollama', '--model', 'qwen3.8:27b-mtp-bf16' } },
@@ -20,20 +20,10 @@ return {
         vim.treesitter.start(event.buf, 'markdown')
         -- Pi's built-in zen toggle only handles the prompt input buffer.
         vim.keymap.set('n', '<leader>az', function()
-          -- Pi redirects WinEnter on history buffers back to the prompt.
-          -- Suppress that event while opening/closing the reading window.
-          local eventignore = vim.o.eventignore
-          vim.opt.eventignore:append('WinEnter')
-          local ok, err = pcall(function()
-            Snacks.zen({
-              toggles = {},
-              win = { width = opts.zen.width or 100, wo = { wrap = true } },
-            })
-          end)
-          vim.o.eventignore = eventignore
-          if not ok then
-            error(err)
-          end
+          Snacks.zen({
+            toggles = {},
+            win = { width = opts.zen.width or 100, wo = { wrap = true } },
+          })
         end, { buffer = event.buf, nowait = true, desc = 'Toggle Pi response zen mode' })
       end,
     })
