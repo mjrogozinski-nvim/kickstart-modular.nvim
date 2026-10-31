@@ -3,6 +3,7 @@ local M = {}
 local busy = false
 local targets = {
   ollama = 'qwen3.8:27b-mtp-bf16',
+  mtplx = 'mtplx-qwen38-27b-optimized-speed',
   ['ds4-q2'] = 'deepseek-v4.1-flash',
   ['ds4-q4'] = 'deepseek-v4.1-flash',
 }
@@ -45,7 +46,7 @@ function M.setup()
       if targets[provider] ~= model then
         busy = false
         self._local_model_pending = nil
-        return fail(cmd, callback, 'This setup manages only Qwen 3.8 and DeepSeek V4.1 Q2/Q4')
+        return fail(cmd, callback, 'This setup manages only Qwen 3.8 BF16/MTPLX and DeepSeek V4.1 Q2/Q4')
       end
       if switching then vim.notify('Preparing ' .. provider .. ' (unload → start → ready)…') end
       vim.system({ 'python3', vim.fn.stdpath('config') .. '/scripts/pi-local-model.py', provider },

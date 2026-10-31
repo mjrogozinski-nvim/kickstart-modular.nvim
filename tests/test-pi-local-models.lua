@@ -1,5 +1,6 @@
 -- Run with nvim --headless -u NONE -l tests/test-pi-local-models.lua
 local root = vim.fn.fnamemodify(debug.getinfo(1, 'S').source:sub(2), ':p:h:h')
+vim.opt.rtp:prepend(root)
 package.path = root .. '/lua/?.lua;' .. package.path
 local sent, sessions, completion = {}, {}, nil
 vim.notify = function() end
@@ -41,4 +42,9 @@ vim.wait(50, function() return false end, 10)
 rpc:send({ type = 'abort' })
 finish(0)
 assert(not vim.tbl_contains(sent, 'prompt'), 'Aborted prompt was sent after startup')
+sent = {}
+assert(rpc:send({ type = 'set_model', provider = 'mtplx', modelId = 'mtplx-qwen38-27b-optimized-speed' }))
+assert(#sent == 0, 'MTPLX switched before server readiness')
+finish(0)
+assert(sent[1] == 'set_model', 'MTPLX model switch rejected')
 print('PASS: readiness, failure, concurrent switch, busy session and cancellation guards')

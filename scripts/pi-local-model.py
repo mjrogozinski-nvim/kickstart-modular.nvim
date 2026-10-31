@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import signal
+import shlex
 import subprocess
 import sys
 import time
@@ -13,10 +14,13 @@ import urllib.request
 
 HOME_DIR = Path.home()
 SETUP = HOME_DIR / 'Developer/ai/deepseek-v41-local'
+MTPLX = HOME_DIR / 'Developer/ai/mtplx'
+MTPLX_REPO = 'Youssofal/Qwen3.8-27B-MTPLX-Optimized-Speed'
 STATE = HOME_DIR / '.local/state/nvim/pi-models'
 QWEN = 'qwen3.8:27b-mtp-bf16'
 TARGETS = {'ollama': (11434, QWEN), 'ds4-q2': (8012, 'deepseek-v4.1-flash'),
-           'ds4-q4': (8014, 'deepseek-v4.1-flash')}
+           'ds4-q4': (8014, 'deepseek-v4.1-flash'),
+           'mtplx': (8000, 'mtplx-qwen38-27b-optimized-speed')}
 
 
 def request(port, path, body=None, timeout=5):
@@ -53,11 +57,26 @@ def processes():
         if len(parts) != 3 or 'Z' in parts[1]:
             continue
         pid, _, command = parts
-        args = command.split()
+        try:
+            args = shlex.split(command)
+        except ValueError:
+            continue
+        launcher = str(MTPLX / '.venv/bin/mtplx') in args[:2] and 'serve' in args
+        # The CLI execs the actual server module and resolves the repo to a local path.
+        module_server = ('-m' in args[:4]
+                         and args[args.index('-m') + 1:args.index('-m') + 2]
+                         == ['mtplx.server.openai'])
+        if (launcher or module_server) and '--model' in args and '--port' in args:
+            model = args[args.index('--model') + 1:args.index('--model') + 2]
+            model_path = HOME_DIR / '.mtplx/models' / MTPLX_REPO.replace('/', '--')
+            if (model in ([MTPLX_REPO], [str(model_path)])
+                    and args[args.index('--port') + 1:args.index('--port') + 2] == ['8000']):
+                found[int(pid)] = 'mtplx'
+            continue
         if not args or Path(args[0]).name != 'ds4-server':
             continue
         for provider, (port, _) in TARGETS.items():
-            if provider == 'ollama':
+            if not provider.startswith('ds4-'):
                 continue
             quant = provider[-2:].upper()
             if ('--port' in args and args.index('--port') + 1 < len(args)
@@ -67,7 +86,7 @@ def processes():
     return found
 
 
-def stop_deepseek(except_provider=None):
+def stop_local_servers(except_provider=None):
     stopping = {pid: provider for pid, provider in processes().items()
                 if provider != except_provider}
     for pid in stopping:
@@ -78,7 +97,7 @@ def stop_deepseek(except_provider=None):
                 os.kill(pid, signal.SIGTERM)
             except ProcessLookupError:
                 pass
-    wait_for(lambda: not (set(processes()) & set(stopping)), 60, 'DeepSeek to exit')
+    wait_for(lambda: not (set(processes()) & set(stopping)), 60, 'local model server to exit')
 
 
 def unload_ollama(keep=None):
@@ -95,6 +114,9 @@ def unload_ollama(keep=None):
 def ready(provider):
     port, model = TARGETS[provider]
     try:
+        if provider == 'mtplx':
+            health = request(port, '/health')
+            return health.get('ok') is True and health.get('model') == model
         return any(m['id'] == model for m in request(port, '/v1/models')['data'])
     except (OSError, ValueError, KeyError):
         return False
@@ -103,9 +125,11 @@ def ready(provider):
 def ensure(provider):
     if provider not in TARGETS:
         raise ValueError(f'Unsupported local provider: {provider}')
-    if provider != 'ollama' and not (SETUP / 'start-server.sh').is_file():
+    if provider.startswith('ds4-') and not (SETUP / 'start-server.sh').is_file():
         raise RuntimeError('DeepSeek start-server.sh is missing')
-    stop_deepseek(except_provider=provider)
+    if provider == 'mtplx' and not (MTPLX / '.venv/bin/mtplx').is_file():
+        raise RuntimeError('MTPLX executable is missing')
+    stop_local_servers(except_provider=provider)
     unload_ollama(keep=QWEN if provider == 'ollama' else None)
     if provider == 'ollama':
         if not any(m.get('name') == QWEN for m in loaded()):
@@ -124,7 +148,12 @@ def ensure(provider):
             log = STATE / f'{provider}.log'
             print(f'Starting {provider}; log: {log}', flush=True)
             with log.open('ab') as output:
-                child = subprocess.Popen(['sh', str(SETUP / 'start-server.sh'), provider[-2:]],
+                command = ([str(MTPLX / '.venv/bin/mtplx'), 'serve', '--model', MTPLX_REPO,
+                            '--host', '127.0.0.1', '--port', '8000',
+                            '--reasoning-effort', 'medium', '--fan-mode', 'default']
+                           if provider == 'mtplx' else
+                           ['sh', str(SETUP / 'start-server.sh'), provider[-2:]])
+                child = subprocess.Popen(command,
                                          stdin=subprocess.DEVNULL, stdout=output, stderr=output,
                                          start_new_session=True)
             (STATE / f'{provider}.pid').write_text(str(child.pid))

@@ -4,7 +4,7 @@ return {
   opts = {
     cli = { args = { '--provider', 'ollama', '--model', 'qwen3.8:27b-mtp-bf16' } },
     -- Provider URLs and credentials are inherited from ~/.pi/agent/models.json.
-    models = { 'qwen3.8:27b-mtp-bf16', 'deepseek-v4.1-flash' },
+    models = { 'qwen3.8:27b-mtp-bf16', 'mtplx/mtplx-qwen38-27b-optimized-speed', 'deepseek-v4.1-flash' },
     -- Keep Space-prefixed shortcuts out of insert mode to avoid typing delays.
     zen = { keys = { toggle = { '<leader>az', modes = { 'n' } } } },
   },
