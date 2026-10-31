@@ -1,12 +1,8 @@
-local function project_root()
-  local filename = vim.api.nvim_buf_get_name(0)
-  local start = filename ~= '' and vim.fs.dirname(filename) or vim.uv.cwd()
-  local makefile = vim.fs.find('Makefile', { path = start, upward = true })[1]
-  return makefile and vim.fs.dirname(makefile) or nil
-end
+local overseer_components = require 'code.utils.overseer-components'
+local project_root = require 'code.utils.project-root'
 
 local function build_and_run_all_tests()
-  local root = project_root()
+  local root = project_root({ 'Makefile' })
   if not root then
     vim.notify('No Makefile found for this project', vim.log.levels.ERROR)
     return
@@ -24,20 +20,13 @@ local function build_and_run_all_tests()
             name = 'build',
             cmd = { 'make', 'build' },
             cwd = root,
-            components = {
-              { 'on_output_parse', problem_matcher = '$gcc' },
-              { 'on_output_quickfix', open = false },
-              'default',
-            },
+            components = overseer_components.build_output(),
           },
           {
             name = 'test',
             cmd = { 'ctest', '--test-dir', 'build', '--output-on-failure' },
             cwd = root,
-            components = {
-              { 'open_output', direction = 'dock', focus = false, on_start = 'always' },
-              'default',
-            },
+            components = overseer_components.dock_output(),
           },
         },
       },
@@ -46,37 +35,30 @@ local function build_and_run_all_tests()
     :start()
 end
 
-local function newest_task(tasks, predicate)
-  local newest
-  for _, task in ipairs(tasks) do
-    if predicate(task) and (not newest or task.id > newest.id) then
-      newest = task
-    end
-  end
-  return newest
-end
-
 local function summary_task(overseer)
   local status = require('overseer.constants').STATUS
   local tasks = overseer.list_tasks { include_ephemeral = true }
-  local parent = newest_task(tasks, function(task)
-    return task.parent_id == nil
-  end)
+  local parent
+  for _, task in ipairs(tasks) do
+    if task.parent_id == nil and (not parent or task.id > parent.id) then
+      parent = task
+    end
+  end
   if not parent then
     return nil
   end
-
-  local failed = newest_task(tasks, function(task)
-    return task.parent_id == parent.id and task.status == status.FAILURE
-  end)
-  if failed then
-    return failed
+  local failed, last
+  for _, task in ipairs(tasks) do
+    if task.parent_id == parent.id then
+      if task.status == status.FAILURE and (not failed or task.id > failed.id) then
+        failed = task
+      end
+      if task.status ~= status.PENDING and (not last or task.id > last.id) then
+        last = task
+      end
+    end
   end
-
-  local last_started = newest_task(tasks, function(task)
-    return task.parent_id == parent.id and task.status ~= status.PENDING
-  end)
-  return last_started or parent
+  return failed or last or parent
 end
 
 -- another option is :OverseerRun cmake\ build
