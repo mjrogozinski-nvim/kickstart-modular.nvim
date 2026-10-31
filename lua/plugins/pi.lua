@@ -18,6 +18,23 @@ return {
       pattern = 'pi-chat-history',
       callback = function(event)
         vim.treesitter.start(event.buf, 'markdown')
+        -- Pi's built-in zen toggle only handles the prompt input buffer.
+        vim.keymap.set('n', '<leader>az', function()
+          -- Pi redirects WinEnter on history buffers back to the prompt.
+          -- Suppress that event while opening/closing the reading window.
+          local eventignore = vim.o.eventignore
+          vim.opt.eventignore:append('WinEnter')
+          local ok, err = pcall(function()
+            Snacks.zen({
+              toggles = {},
+              win = { width = opts.zen.width or 100, wo = { wrap = true } },
+            })
+          end)
+          vim.o.eventignore = eventignore
+          if not ok then
+            error(err)
+          end
+        end, { buffer = event.buf, nowait = true, desc = 'Toggle Pi response zen mode' })
       end,
     })
   end,
