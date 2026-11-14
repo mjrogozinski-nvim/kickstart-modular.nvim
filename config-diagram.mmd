@@ -1,0 +1,157 @@
+flowchart TD
+  INIT["<b>init.lua</b><br/>(entry point)"]
+  OPT["lua/options.lua<br/>editor options"]
+  LB["lua/lazy-bootstrap.lua<br/>clones + sets up lazy.nvim"]
+  PROF["lua/enable-profile.lua<br/>reads NVIM_CONFIG_PROFILE (default: home)"]
+  LSPL["lua/lsp-config.lua<br/>vim.lsp.enable: ast-grep, nixd"]
+
+  subgraph SANE["code/sane/ — behavior fixes (13)"]
+    direction LR
+    S1["change · copy · wincmd · noh<br/>exit-terminal · autosave · q-closes-buffers<br/>dont-autocomment · visual-paste<br/>H/L jumps · visual-block · keepjumps<br/>stackjumplist"]
+  end
+
+  subgraph UTILS["code/ — custom mappings & helpers (~20)"]
+    direction LR
+    U1["highlight-on-yank · autoresize · spell-check<br/>open-reference-in-second-split · file-grep<br/>completion-jumping · copy-file-path · f2-gf"]
+    U2["qflist open/close/nav · close-buffer · move-line<br/>make-session · multi-line-star · select-colorscheme<br/>edit-configuration · treesitter-actions"]
+    U3["utils/: save-writable-buffer<br/>save-all-writable-buffers · buf-key-map"]
+  end
+
+  INIT --> OPT
+  INIT --> LB
+  INIT --> PROF
+  INIT --> LSPL
+  INIT --> SANE
+  INIT --> UTILS
+  INIT --> PAL["lua/code/' . Config_profile .. '.all'"]
+
+  subgraph PROFDIR["profiles/ (runtimepath prepend)"]
+    P_HOME["profiles/home"]
+  end
+  PROF --> P_HOME
+  PAL -->|profile=home| HOME_ALL["code/home/all.lua"]
+  HOME_ALL --> OKB["code/home/overseer-keybindings.lua"]
+  HOMED["code/home/gtest-actions.lua"]
+  OKB -->|uses| OVR
+  HOMED -->|uses| OVR
+  HOMED -->|uses| TSA["code/treesitter-actions.lua"]
+  HOMED -->|uses| DAP
+
+  subgraph LAZY["lazy.nvim — plugin specs (lua/plugins/, imported by lazy-bootstrap)"]
+
+    subgraph CORE["lua/plugins/ — core"]
+      direction TB
+      subgraph UI["UI / nav"]
+        SNACKS["snacks.nvim"]
+        WK["which-key.nvim"]
+        TROUBLE["trouble.nvim"]
+        TODO["todo-comments.nvim"]
+        GS["gitsigns.nvim"]
+        SW["switch.vim"]
+        GRUG["grug-far.nvim (search)"]
+        FZF["fzf-lua"]
+        TSC["telescope.nvim<br/>(+fzf-native, ui-select)"]
+      end
+
+      subgraph LSP["LSP"]
+        LSPCFG["lspconfig.nvim<br/>+ mason.nvim · mason-lspconfig<br/>mason-tool-installer · fidget · lazydev"]
+        SAGA["lspsaga.nvim"]
+        SELR["nvim-lsp-selection-range"]
+        ASTG["ast-grep LSP<br/>(lsp/ast-grep.lua, native vim.lsp)"]
+      end
+
+      subgraph COMP["Completion & format"]
+        BLINK["blink.cmp"] --> LUA["LuaSnip"]
+        CONF["conform.nvim (format on save)"]
+      end
+
+      subgraph TS["Tree-sitter"]
+        TSX["nvim-treesitter<br/>(lazy=false, :TSUpdate)"]
+        TSM["tree-sitter-manager.nvim"]
+        TSXT["nvim-treesitter-textobjects"]
+        QRY[("queries/<br/>cpp · lua · python")]
+        TSXT --> TSX
+        TSX -. custom queries .-> QRY
+      end
+
+      subgraph AI["AI (local-first)"]
+        PI["pi2.nvim<br/>(ollama, qwen3.8:27b-mtp-bf16)"]
+        CC["codecompanion.nvim<br/>(local-ai.lua: Ollama adapters,<br/>qwen3-coder:30b via OLLAMA_HOST)"]
+        RMD["render-markdown.nvim"]
+        PI --> RMD
+        PI --> PIM["code/pi-local-models.lua"]
+        PIM --> PYS[("scripts/pi-local-model.py")]
+      end
+
+      subgraph TEST["Testing & builds"]
+        OVR["overseer.nvim (tasks)"]
+        NEOF["neotest<br/>(+ neotest-busted · FixCursorHold)"]
+        NG["neotest-gtest"]
+        NPY["neotest-python"]
+        NVT["neotest-vim-test"]
+        VT["vim-test"]
+        NEOF --> NG
+        NEOF --> NPY
+        NEOF --> NVT
+        NVT --> VT
+      end
+
+      subgraph DBG["Debug"]
+        DAP["nvim-dap"]
+        DAPVT["nvim-dap-virtual-text"]
+        DAPVT --> DAP
+      end
+
+      subgraph GIT["Git"]
+        LG["lazygit.nvim (+plenary)"]
+        FUG["vim-fugitive"]
+      end
+    end
+
+    subgraph MINI["plugins/mini/ — mini.nvim modules"]
+      direction LR
+        M1["ai"] ~~~ M2["files"] ~~~ M3["indentscope"] ~~~ M4["jump2d"] ~~~ M5["move"] ~~~ M6["statusline"] ~~~ M7["surround"]
+    end
+
+    subgraph SCHEME["plugins/colorschemes/ (6)"]
+      direction LR
+        C1["base16-vim"] ~~~ C2["flexoki"] ~~~ C3["kanagawa"] ~~~ C4["melange"] ~~~ C5["onedark"] ~~~ C6["SpacegrayEighties"]
+    end
+
+    subgraph LANG["Language servers / tooling"]
+      direction LR
+        subgraph R["rust/"]
+          RUST["rustaceanvim ^5"]
+        end
+        subgraph H["haskell/"]
+          HT["haskell-tools ^4"]
+        end
+        subgraph C["cpp/"]
+          CE["clangd_extensions"]
+        end
+        subgraph PY["python/"]
+          VS["venv-selector"]
+        end
+        ESP["esp32.nvim"]
+        NIX["nixd (via lsp-config)"]
+      end
+  end
+
+  LB --> LAZY
+
+  subgraph AFTER["after/ftplugin/ (per-filetype)"]
+    direction LR
+        A1["lua"] ~~~ A2["cmake"] ~~~ A3["python: execute, venv-select"] ~~~ A4["haskell"] ~~~ A5["rust"] ~~~ A6["gitcommit"]
+  end
+
+  subgraph AUX["Support files"]
+    direction LR
+        MK["Makefile (headless tests)"]
+        TST["tests/: minimal_init,<br/>validate-gtest-run-mapping,<br/>test-pi-local-models"]
+        IDEAS["ideas/ (vision, tasks)"]
+  end
+
+  OLLAMA[("Ollama server<br/>127.0.0.1:11434")]
+  PI --> OLLAMA
+  CC --> OLLAMA
+  OKB -. keymaps .-> OVR
