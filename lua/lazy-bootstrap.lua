@@ -13,7 +13,9 @@ end
 local rtp = vim.opt.rtp
 rtp:prepend(lazypath)
 
-require('lazy').setup {
+local profile = os.getenv 'NVIM_CONFIG_PROFILE' or 'home'
+
+local plugins = {
   { import = 'plugins' },
   { import = 'plugins.mini' },
   { import = 'plugins.colorschemes' },
@@ -22,6 +24,9 @@ require('lazy').setup {
   { import = 'plugins.rust' },
   { import = 'plugins.python' },
   { import = 'plugins.debug' },
+  { import = 'plugins.' .. profile },
 }
+
+require('lazy').setup(plugins)
 
 -- vim: ts=2 sts=2 sw=2 et
