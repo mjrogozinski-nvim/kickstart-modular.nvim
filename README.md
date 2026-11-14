@@ -244,3 +244,24 @@ sudo pacman -S --noconfirm --needed gcc make git ripgrep fd unzip neovim
 ```
 </details>
 
+
+### C++ projects (home profile)
+
+With `NVIM_CONFIG_PROFILE=home` (the default), C++ buffers share `<leader>cx` (build and run an executable; choose from a list
+when multiple executable targets exist), `<leader>cb` (configure and build), `<leader>cm` (build and
+run CTest), `<leader>co` (build output), and `<F4>` / `<leader>o` (source/header).
+On a GoogleTest declaration or fixture, `<leader>cm` runs that test and
+`<leader>dm` debugs it with CodeLLDB. Leaving the declaration restores the
+buffer's build-and-test mapping. `<leader>ff` uses clang-format.
+
+CMake actions resolve the project from the current buffer. Configure presets
+are selected once per project per session; a matching `CMAKE_PRESET`,
+`CXX_TOOLCHAIN`, or `vim.g.cpp_cmake_preset` skips the picker. Without presets,
+CMake configures a Debug build in `build/`. CMake reports the actual build
+directory; no target names or project paths are hard-coded. An optional
+`vim.g.cpp_cmake_config` selects a build configuration (otherwise the cached build type or Debug).
+CTest discovers test executable paths and working directories after building.
+Multiple executables show a picker; unregistered tests allow entering a path.
+A missing root compilation database is linked to the generated database.
+In the home profile, shell tools take precedence over Mason fallbacks, including clangd and
+clang-format, so launching Neovim from a development shell uses its tools.

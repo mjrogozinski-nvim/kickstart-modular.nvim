@@ -1,10 +1,7 @@
 local M = {}
 
 local api = vim.api
-local uv = vim.uv
 local actions = require 'code.treesitter-actions'
-local overseer_components = require 'code.utils.overseer-components'
-local project_root = require 'code.utils.project-root'
 
 local function unqualified_base_name(base)
   base = base:gsub('%s+', '')
@@ -19,139 +16,12 @@ local function make_filter(macro, suite, name)
   return filter
 end
 
-local function project_paths(bufnr)
-  local root = project_root({ 'CMakeLists.txt' }, bufnr)
-  if not root then
-    return nil
-  end
-  return root, root .. '/build'
-end
-
-local function require_project(bufnr)
-  local root, build_dir = project_paths(bufnr)
-  if not root then
-    vim.notify('No CMakeLists.txt found for this test', vim.log.levels.ERROR)
-  end
-  return root, build_dir
-end
-
-local function ensure_compile_commands_link(root)
-  local link = root .. '/compile_commands.json'
-  if not uv.fs_lstat(link) then
-    uv.fs_symlink('build/compile_commands.json', link)
-  end
-end
-
-local function configure_definition(root, build_dir)
-  return {
-    name = 'configure',
-    cmd = {
-      'cmake',
-      '-S',
-      root,
-      '-B',
-      build_dir,
-      '-DCMAKE_BUILD_TYPE=Debug',
-      '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON',
-    },
-    cwd = root,
-    components = overseer_components.build_output(),
-  }
-end
-
-local function build_definition(root, build_dir)
-  return {
-    name = 'build',
-    cmd = { 'cmake', '--build', build_dir, '--parallel' },
-    cwd = root,
-    components = overseer_components.build_output(),
-  }
-end
-
--- The shared configure-if-needed + build task list used by both run and debug.
-local function cmake_tasks(root, build_dir)
-  ensure_compile_commands_link(root)
-  local tasks = {}
-  if not uv.fs_stat(build_dir .. '/CMakeCache.txt') then
-    tasks[#tasks + 1] = configure_definition(root, build_dir)
-  end
-  tasks[#tasks + 1] = build_definition(root, build_dir)
-  return tasks
-end
-
 local function run_item(item, bufnr)
-  require 'code.utils.save-all-writable-buffers'()
-  local root, build_dir = require_project(bufnr)
-  if not root then
-    return
-  end
-
-  local tasks = cmake_tasks(root, build_dir)
-  tasks[#tasks + 1] = {
-    name = 'execute ' .. item.data.label,
-    cmd = { build_dir .. '/app', '--gtest_filter=' .. item.data.filter },
-    cwd = root,
-    components = overseer_components.dock_output(),
-  }
-
-  require('overseer')
-    .new_task({
-      name = 'run ' .. item.data.label,
-      cwd = root,
-      strategy = {
-        'orchestrator',
-        tasks = tasks,
-      },
-      components = { 'default' },
-    })
-    :start()
+  require('code.home.cmake').gtest(item, bufnr, false)
 end
 
 local function debug_item(item, bufnr)
-  require 'code.utils.save-all-writable-buffers'()
-  local root, build_dir = require_project(bufnr)
-  if not root then
-    return
-  end
-
-  local function start_debug()
-    local executable = build_dir .. '/app'
-    if not uv.fs_stat(executable) then
-      vim.notify('GoogleTest executable not found: ' .. executable, vim.log.levels.ERROR)
-      return
-    end
-
-    local dap = require 'dap'
-    if not dap.adapters.codelldb then
-      vim.notify('codelldb is not available; install it with :MasonInstall codelldb', vim.log.levels.ERROR)
-      return
-    end
-
-    dap.run {
-      name = 'debug ' .. item.data.label,
-      type = 'codelldb',
-      request = 'launch',
-      program = executable,
-      cwd = root,
-      args = { '--gtest_filter=' .. item.data.filter },
-      stopOnEntry = false,
-    }
-  end
-
-  local success = require('overseer.constants').STATUS.SUCCESS
-  local task = require('overseer').new_task({
-    name = 'build ' .. item.data.label,
-    cwd = root,
-    strategy = { 'orchestrator', tasks = cmake_tasks(root, build_dir) },
-    components = { 'default' },
-  })
-  task:subscribe('on_complete', function(_, status)
-    if status == success then
-      vim.schedule(start_debug)
-    end
-    return true
-  end)
-  task:start()
+  require('code.home.cmake').gtest(item, bufnr, true)
 end
 
 local function contextual_item(range, data)

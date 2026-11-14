@@ -1,0 +1,13 @@
+vim.keymap.set('n', '<leader>cx', function()
+  require('code.home.cmake').run(0)
+end, { buffer = true, desc = 'Build and run executable' })
+
+vim.keymap.set('n', '<leader>cb', function()
+  require('code.home.cmake').build(0)
+end, { buffer = true, desc = 'Build project with CMake' })
+vim.keymap.set('n', '<leader>cm', function()
+  require('code.home.cmake').test(0)
+end, { buffer = true, desc = 'build and run all tests' })
+vim.keymap.set('n', '<leader>o', '<cmd>ClangdSwitchSourceHeader<cr>', { buffer = true, desc = 'switch header-source' })
+vim.keymap.set('n', '<F4>', '<cmd>ClangdSwitchSourceHeader<cr>', { buffer = true, desc = 'switch header-source' })
+require('code.home.gtest-actions').setup_buffer()

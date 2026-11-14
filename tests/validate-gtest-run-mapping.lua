@@ -70,6 +70,7 @@ local function main()
 
   assert(vim.fn.mkdir(temporary_project .. '/bin', 'p') == 1)
   assert(vim.fn.mkdir(temporary_project .. '/build', 'p') == 1)
+  temporary_project = assert(uv.fs_realpath(temporary_project))
 
   local source = {
     '#include <gtest/gtest.h>',
@@ -108,7 +109,16 @@ local function main()
   write_file(source_path, source)
   executable_file(temporary_project .. '/bin/cmake', {
     '#!/bin/sh',
-    'exit 0',
+    'if [ "$1" = --list-presets ]; then',
+    [[  printf '\n  "portable"\n']],
+    'elif [ "$1" = --build ]; then',
+    '  printf "%s\\n" "$@" > "$ALL_TESTS_BUILD_LOG"',
+    '  printf "build\\n" >> "$ALL_TESTS_ORDER_LOG"',
+    '  [ "$ALL_TESTS_BUILD_FAIL" != 1 ]',
+    'else',
+    '  printf "%s\\n" "$@" > "$PWD/configure-arguments"',
+    '  printf "%s\\n" "-- Build files have been written to: $PWD/build"',
+    'fi',
   })
   executable_file(temporary_project .. '/build/app', {
     '#!/bin/sh',
@@ -122,8 +132,10 @@ local function main()
   })
   executable_file(temporary_project .. '/bin/ctest', {
     '#!/bin/sh',
-    'printf "%s\\n" "$@" > "$ALL_TESTS_RUN_LOG"',
-    'printf "test\\n" >> "$ALL_TESTS_ORDER_LOG"',
+    'case " $* " in',
+    [[  *--show-only=json-v1*) printf '{"tests":[{"command":["%s/build/app"]}]}\n' "$PWD" ;;]],
+    '  *) printf "%s\\n" "$@" > "$ALL_TESTS_RUN_LOG"; printf "test\\n" >> "$ALL_TESTS_ORDER_LOG" ;;',
+    'esac',
   })
 
   vim.env.PATH = temporary_project .. '/bin:' .. original_path
@@ -171,32 +183,26 @@ local function main()
       all_tests_child_count = all_tests_child_count + 1
     end
   end
-  assert(all_tests_child_count == 2, vim.inspect(all_tests_children))
-  assert(all_tests_children.build == 'SUCCESS', vim.inspect(all_tests_children))
+  assert(all_tests_child_count == 1, vim.inspect(all_tests_children))
   assert(all_tests_children.test == 'SUCCESS', vim.inspect(all_tests_children))
-  assert(vim.deep_equal(vim.fn.readfile(all_tests_build_log), { 'build' }))
-  assert(vim.deep_equal(vim.fn.readfile(all_tests_run_log), { '--test-dir', 'build', '--output-on-failure' }))
+  assert(
+    vim.deep_equal(vim.fn.readfile(all_tests_build_log), {
+      '--build',
+      temporary_project .. '/build',
+      '--config',
+      'Debug',
+      '--parallel',
+    }),
+    vim.inspect(vim.fn.readfile(all_tests_build_log))
+  )
+  assert(vim.deep_equal(vim.fn.readfile(all_tests_run_log), {
+    '--test-dir',
+    temporary_project .. '/build',
+    '-C',
+    'Debug',
+    '--output-on-failure',
+  }))
   assert(vim.deep_equal(vim.fn.readfile(all_tests_order_log), { 'build', 'test' }))
-
-  -- A later completion time used to move test above build in the task list.
-  all_tests_child_tasks.build.time_start = 100
-  all_tests_child_tasks.build.time_end = 101
-  all_tests_child_tasks.test.time_start = 102
-  all_tests_child_tasks.test.time_end = 103
-  require('overseer.task_list').on_task_updated()
-
-  local visible_children = {}
-  for _, task in
-    ipairs(overseer.list_tasks {
-      include_ephemeral = true,
-      sort = require('overseer.config').task_list.sort,
-    })
-  do
-    if task.parent_id == all_tests_parent.id then
-      visible_children[#visible_children + 1] = task.name
-    end
-  end
-  assert(vim.deep_equal(visible_children, { 'build', 'test' }), vim.inspect(visible_children))
 
   local test_task
   for _, task in ipairs(overseer.list_tasks { include_ephemeral = true }) do
@@ -231,7 +237,7 @@ local function main()
   assert(
     vim.wait(15000, function()
       for _, task in ipairs(overseer.list_tasks {}) do
-        if not tasks_before_failed_build[task.id] and task.name == 'run all tests' then
+        if not tasks_before_failed_build[task.id] and task.name == 'build project' then
           failed_parent = task
           return task:is_complete()
         end
@@ -266,7 +272,7 @@ local function main()
 
   local default_run = function() end
   local default_debug = function() end
-  vim.keymap.set('n', '<leader>cm', default_run, { desc = 'default run sentinel' })
+  vim.keymap.set('n', '<leader>cm', default_run, { buffer = bufnr, desc = 'default run sentinel' })
   vim.keymap.set('n', '<leader>dm', default_debug, { desc = 'default debug sentinel' })
 
   local actions = require 'code.home.gtest-actions'
@@ -505,12 +511,14 @@ local function main()
       children[task.name] = task.status
     end
   end
-  assert(children.configure == 'SUCCESS', vim.inspect(children))
-  assert(children.build == 'SUCCESS', vim.inspect(children))
   assert(children['execute PlainSuite.Works'] == 'SUCCESS', vim.inspect(children))
   assert(vim.deep_equal(vim.fn.readfile(execution_log), { '--gtest_filter=PlainSuite.Works' }))
 
   api.nvim_set_current_buf(bufnr)
+  -- A preset name unrelated to any project or compiler is discovered normally.
+  write_file(temporary_project .. '/CMakePresets.json', {
+    '{"version":3,"configurePresets":[{"name":"portable","binaryDir":"build"}]}',
+  })
   api.nvim_win_set_cursor(0, { parameter_test_line, 0 })
   actions.update_hint(bufnr)
 
@@ -531,6 +539,11 @@ local function main()
     'debug action was not dispatched'
   )
 
+  assert(vim.deep_equal(vim.fn.readfile(temporary_project .. '/configure-arguments'), {
+    '--preset',
+    'portable',
+    '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON',
+  }))
   assert(
     debug_configuration.program == uv.fs_realpath(temporary_project .. '/build/app'),
     vim.inspect {

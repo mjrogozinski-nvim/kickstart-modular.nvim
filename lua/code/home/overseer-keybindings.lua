@@ -1,39 +1,6 @@
-local overseer_components = require 'code.utils.overseer-components'
-local project_root = require 'code.utils.project-root'
-
-local function build_and_run_all_tests()
-  local root = project_root({ 'Makefile' })
-  if not root then
-    vim.notify('No Makefile found for this project', vim.log.levels.ERROR)
-    return
-  end
-
-  require 'code.utils.save-all-writable-buffers'()
-  require('overseer')
-    .new_task({
-      name = 'run all tests',
-      cwd = root,
-      strategy = {
-        'orchestrator',
-        tasks = {
-          {
-            name = 'build',
-            cmd = { 'make', 'build' },
-            cwd = root,
-            components = overseer_components.build_output(),
-          },
-          {
-            name = 'test',
-            cmd = { 'ctest', '--test-dir', 'build', '--output-on-failure' },
-            cwd = root,
-            components = overseer_components.dock_output(),
-          },
-        },
-      },
-      components = { 'default' },
-    })
-    :start()
-end
+vim.keymap.set('n', '<leader>cx', function()
+  require('code.home.cmake').run(0)
+end, { silent = true, desc = 'Build and run executable' })
 
 local function summary_task(overseer)
   local status = require('overseer.constants').STATUS
@@ -61,18 +28,13 @@ local function summary_task(overseer)
   return failed or last or parent
 end
 
--- another option is :OverseerRun cmake\ build
 vim.keymap.set('n', '<leader>cb', function()
-  require('overseer').run_task { name = 'cmake build' }
-end, {
-  silent = true,
-  desc = 'cmake build (Overseer run cmake build)',
-})
+  require('code.home.cmake').build(0)
+end, { silent = true, desc = 'Build project with CMake' })
 
-vim.keymap.set('n', '<leader>cm', build_and_run_all_tests, {
-  silent = true,
-  desc = 'build and run all tests',
-})
+vim.keymap.set('n', '<leader>cm', function()
+  require('code.home.cmake').test(0)
+end, { silent = true, desc = 'build and run all tests' })
 
 vim.keymap.set('n', '<leader>co', function()
   local overseer = require 'overseer'
