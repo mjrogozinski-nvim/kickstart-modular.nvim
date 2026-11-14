@@ -1,3 +1,11 @@
+> [!IMPORTANT]
+> This configuration has moved to [mjrogozinski/config.nvim](https://github.com/mjrogozinski/config.nvim).
+> This repository is archived and retained for historical reference. All future updates are maintained in the new independent repository.
+> Existing checkouts can switch with:
+> ```sh
+> git remote set-url origin git@github.com:mjrogozinski/config.nvim.git
+> ```
+
 # kickstart-modular.nvim
 
 ## Introduction
