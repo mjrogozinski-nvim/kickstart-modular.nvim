@@ -1,6 +1,7 @@
 return {
   {
     'nvim-telescope/telescope.nvim',
+    branch = 'master',
     event = 'VimEnter',
     dependencies = {
       'nvim-lua/plenary.nvim',
@@ -18,17 +19,6 @@ return {
       { 'nvim-tree/nvim-web-devicons', enabled = vim.g.have_nerd_font },
     },
     config = function()
-      local previewers_utils = require 'telescope.previewers.utils'
-      previewers_utils.ts_highlighter = function(bufnr, ft)
-        if not ft or ft == '' then
-          return false
-        end
-
-        local lang = vim.treesitter.language.get_lang(ft) or ft
-        local ok = pcall(vim.treesitter.start, bufnr, lang)
-        return ok
-      end
-
       require('telescope').setup {
         defaults = {
           mappings = {
